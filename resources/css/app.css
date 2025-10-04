@@ -1,0 +1,50 @@
+@import 'tailwindcss'; 
+@plugin "daisyui"; 
+@plugin "daisyui/theme" {
+    name: "light";
+    default: true;
+    prefersdark: false;
+    color-scheme: "light";
+      /* Warna Dasar: Sangat terang dan bersih, nyaris putih dengan sedikit sentuhan sejuk */
+      --color-base-100: oklch(99.6% 0.002 250);
+      --color-base-200: oklch(97% 0.003 250);
+      --color-base-300: oklch(92% 0.004 250);
+      --color-base-content: oklch(25% 0.02 255); /* Teks utama: abu-abu gelap yang sejuk, bukan hitam pekat */
+
+      /* Warna Primer: Warna utama brand Anda */
+      --color-primary: oklch(0.4851 0.1476 252.8);
+      --color-primary-content: oklch(99% 0.001 0); /* Teks di atas warna primer: putih bersih */
+
+      /* Warna Sekunder: Abu-abu kebiruan yang lembut untuk elemen pendukung */
+      --color-secondary: oklch(70% 0.04 255);
+      --color-secondary-content: oklch(25% 0.02 255);
+
+      /* Warna Aksen: Teal (hijau kebiruan) modern untuk menarik perhatian tanpa terlalu mencolok */
+      --color-accent: oklch(65% 0.12 190);
+      --color-accent-content: oklch(20% 0.03 250);
+
+      /* Warna Netral: Abu-abu menengah untuk border, divider, atau status disabled */
+      --color-neutral: oklch(45% 0.01 250);
+      --color-neutral-content: oklch(99% 0.001 0);
+
+      /* Warna Status/Semantik */
+      --color-info: oklch(65% 0.13 250); /* Biru yang lebih terang untuk pesan informasi */
+      --color-info-content: oklch(20% 0.03 250);
+
+      --color-success: oklch(65% 0.15 155); /* Hijau yang jelas dan positif */
+      --color-success-content: oklch(20% 0.04 155);
+
+      --color-warning: oklch(75% 0.13 90); /* Kuning amber yang hangat untuk peringatan */
+      --color-warning-content: oklch(25% 0.05 90);
+
+      --color-error: oklch(60% 0.18 25); /* Merah yang tegas namun tidak menyakitkan mata */
+      --color-error-content: oklch(99% 0.001 0);
+    --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 1;
+  } 
