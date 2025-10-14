@@ -14,17 +14,24 @@ use App\Http\Controllers\Admin\TemplateController as AdminTemplateController;
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\SupportTicketController as ClientSupportTicketController;
-use App\Livewire\ProductShowcase;
-use App\Livewire\CheckoutProcess;
+
 use App\Http\Controllers\PaymentController;
+
+Route::get('/checkout/configure', function () {
+    return view('checkout.configure-page');
+})->name('checkout.configure');
+
+Route::get('/checkout/summary', function () {
+    return view('checkout.summary-page');
+})->name('checkout.summary');
+Route::get('/invoice/{invoice}', App\Livewire\InvoiceShow::class)->name('invoice.show');
+Route::post('/payment/callback', [App\Http\Controllers\PaymentController::class, 'handleTripayCallback'])->name('payment.callback');
 
 // Public routes
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 Route::get('/templates/{template}', [\App\Http\Controllers\TemplateController::class, 'show'])->name('templates.show');
-Route::get('/checkout/{product}', CheckoutProcess::class)->name('checkout');
-Route::get('/checkout/template/{template}', CheckoutProcess::class)->name('checkout.template');
 
 // Payment routes (public for callback)
 Route::post('/payment/callback', [PaymentController::class, 'handleCallback'])->name('payment.callback');
@@ -44,7 +51,18 @@ Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name(
 // Protected routes with role middleware
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/products', \App\Livewire\Admin\ProductManagement::class)->name('admin.products');
+    // Product Management Routes (controller-based, mirroring Users patterns)
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->names([
+        'index' => 'admin.products.index',
+        'create' => 'admin.products.create',
+        'store' => 'admin.products.store',
+        'show' => 'admin.products.show',
+        'edit' => 'admin.products.edit',
+        'update' => 'admin.products.update',
+        'destroy' => 'admin.products.destroy'
+    ]);
+    Route::patch('/products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('admin.products.toggle-status');
+    Route::post('/products/bulk-action', [\App\Http\Controllers\Admin\ProductController::class, 'bulkAction'])->name('admin.products.bulk-action');
     
     // User Management Routes
     Route::resource('users', AdminUserController::class)->names([
@@ -56,6 +74,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         'update' => 'admin.users.update',
         'destroy' => 'admin.users.destroy'
     ]);
+    Route::post('/users/bulk-action', [AdminUserController::class, 'bulkAction'])->name('admin.users.bulk-action');
+    
     Route::patch('/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
     Route::post('/users/bulk-action', [AdminUserController::class, 'bulkAction'])->name('admin.users.bulk-action');
     
@@ -188,3 +208,12 @@ Route::middleware(['auth'])->get('/dashboard', function () {
             return view('dashboard');
     }
 })->name('dashboard');
+
+Route::prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/', [App\Http\Controllers\CheckoutController::class, 'index'])->name('index');
+    Route::post('/step1', [App\Http\Controllers\CheckoutController::class, 'step1'])->name('step1');
+    Route::get('/step2', [App\Http\Controllers\CheckoutController::class, 'step2'])->name('step2');
+    Route::post('/step3', [App\Http\Controllers\CheckoutController::class, 'step3'])->name('step3');
+    Route::post('/submit', [App\Http\Controllers\CheckoutController::class, 'submit'])->name('submit');
+    Route::get('/success', [App\Http\Controllers\CheckoutController::class, 'success'])->name('success');
+});

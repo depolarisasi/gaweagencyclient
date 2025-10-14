@@ -130,7 +130,7 @@ class PaymentController extends Controller
     /**
      * Handle Tripay callback
      */
-    public function handleCallback(Request $request)
+    public function handleTripayCallback(Request $request)
     {
         // Get callback signature from header
         $callbackSignature = $request->header('X-Callback-Signature');

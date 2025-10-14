@@ -25,7 +25,7 @@
                             <span>User Management</span>
                         </a>
                         
-                        <a href="{{ route('admin.products') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
+                        <a href="{{ route('admin.products.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
                             <i class="fas fa-box w-5"></i>
                             <span>Products</span>
                         </a>

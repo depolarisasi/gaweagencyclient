@@ -8,26 +8,29 @@ use App\Models\Product;
 
 class ProductShowcase extends Component
 {
-    public function selectTemplate($templateId)
+    public $templates;
+    public $products;
+    public $selectedTemplateId;
+
+    public function mount()
     {
-        // Redirect ke halaman checkout dengan template yang dipilih
-        return redirect()->route('checkout.template', ['template' => $templateId]);
+        $this->templates = Template::where('is_active', true)->orderBy('sort_order')->get();
+        $this->products = Product::where('is_active', true)->orderBy('sort_order')->orderBy('price')->get();
     }
 
     public function render()
     {
-        // Ambil template yang aktif untuk ditampilkan
-        $templates = Template::active()
-            ->ordered()
-            ->get();
-            
-        // Ambil produk untuk billing options
-        $products = Product::active()
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
+        return view('livewire.product-showcase', [
+            'templates' => $this->templates,
+            'products' => $this->products,
+        ]);
+    }
 
-        return view('livewire.product-showcase', compact('templates', 'products'))
-            ->layout('components.layouts.app');
+    public function selectTemplate($templateId)
+    {
+        $this->selectedTemplateId = $templateId;
+        session(['selected_template_id' => $templateId]);
+        // Redirect or emit event to proceed to configuration
+        return redirect()->route('checkout.configure');
     }
 }

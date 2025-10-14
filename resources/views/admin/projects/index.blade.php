@@ -5,74 +5,8 @@
 @section('content')
 <div class="min-h-screen bg-gray-50">
     <div class="flex">
-        <!-- Sidebar -->
-        <div class="w-64 bg-white shadow-lg border-r border-gray-200">
-            <div class="p-6">
-                <div class="flex items-center space-x-3 mb-8">
-                    <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-crown text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-800">Admin Panel</h3>
-                        <p class="text-xs text-gray-500">Management Center</p>
-                    </div>
-                </div>
-                
-                <nav class="space-y-2">
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                        <i class="fas fa-chart-line w-5"></i>
-                        <span class="font-medium">Dashboard</span>
-                    </a>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Management</p>
-                        
-                        <a href="{{ route('admin.users.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-users w-5"></i>
-                            <span>User Management</span>
-                        </a>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-box w-5"></i>
-                            <span>Products</span>
-                        </a>
-                        
-                        <a href="{{ route('admin.projects.index') }}" class="flex items-center space-x-3 px-4 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200">
-                            <i class="fas fa-project-diagram w-5"></i>
-                            <span>Projects</span>
-                        </a>
-                        
-                        <a href="{{ route('admin.invoices.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-file-invoice w-5"></i>
-                            <span>Invoices</span>
-                        </a>
-                    </div>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Support</p>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-ticket-alt w-5"></i>
-                            <span>Support Tickets</span>
-                        </a>
-                    </div>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Settings</p>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-palette w-5"></i>
-                            <span>Templates</span>
-                        </a>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-credit-card w-5"></i>
-                            <span>Payment Settings</span>
-                        </a>
-                    </div>
-                </nav>
-            </div>
-        </div>
+        <!-- Sidebar --> 
+    @include('layouts.sidebar')
         
         <!-- Main Content -->
         <div class="flex-1 p-8">
@@ -368,7 +302,7 @@
             </button>
         </div>
         
-        <form id="projectForm" class="space-y-6">
+        <form id="projectForm" class="space-y-6 p-8">
             <!-- Basic Information Section -->
             <div class="bg-gray-50 rounded-lg p-6">
                 <div class="flex items-center mb-4">
@@ -382,32 +316,21 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Project Name -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Project Name *</span>
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                </svg>
-                            </div>
-                            <input type="text" name="project_name" class="input input-bordered pl-10 focus:input-primary" required placeholder="Enter project name">
-                        </div>
-                    </div>
-                    
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Project Name *</legend>
+                        <input type="text" name="project_name" class="input input-bordered focus:input-primary" required placeholder="Enter project name">
+                    </fieldset>
+
                     <!-- Client -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Client *</span>
-                        </label>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Client *</legend>
                         <select name="user_id" class="select select-bordered focus:select-primary" required>
                             <option value="">👤 Select Client</option>
                             @foreach(\App\Models\User::where('role', 'client')->where('status', 'active')->get() as $client)
                                 <option value="{{ $client->id }}">{{ $client->name }} ({{ $client->email }})</option>
                             @endforeach
                         </select>
-                    </div>
+                    </fieldset>
                 </div>
             </div>
             
@@ -424,33 +347,27 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Assigned To -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Assign To</span>
-                        </label>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Assign To</legend>
                         <select name="assigned_to" class="select select-bordered focus:select-primary">
                             <option value="">👨‍💼 Select Staff Member</option>
                             @foreach(\App\Models\User::where('role', 'staff')->where('status', 'active')->get() as $staff)
                                 <option value="{{ $staff->id }}">{{ $staff->name }}</option>
                             @endforeach
                         </select>
-                        <label class="label">
-                            <span class="label-text-alt text-gray-500">Optional: Assign project to a staff member</span>
-                        </label>
-                    </div>
-                    
+                        <p class="text-sm text-gray-500 mt-2">Optional: Assign project to a staff member</p>
+                    </fieldset>
+
                     <!-- Status -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Status *</span>
-                        </label>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Status *</legend>
                         <select name="status" class="select select-bordered focus:select-primary" required>
                             <option value="pending">⏳ Pending</option>
                             <option value="active">🚀 Active</option>
                             <option value="on_hold">⏸️ On Hold</option>
                             <option value="completed">✅ Completed</option>
                         </select>
-                    </div>
+                    </fieldset>
                 </div>
             </div>
             
@@ -466,42 +383,20 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
+
                     <!-- Start Date -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Start Date</span>
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                            </div>
-                            <input type="date" name="start_date" class="input input-bordered pl-10 focus:input-primary" value="{{ now()->format('Y-m-d') }}">
-                        </div>
-                        <label class="label">
-                            <span class="label-text-alt text-gray-500">When should the project start?</span>
-                        </label>
-                    </div>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Start Date</legend>
+                        <input type="date" name="start_date" class="input input-bordered focus:input-primary" value="{{ now()->format('Y-m-d') }}">
+                        <p class="text-sm text-gray-500 mt-2">When should the project start?</p>
+                    </fieldset>
                     
                     <!-- Due Date -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Due Date</span>
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <input type="date" name="due_date" class="input input-bordered pl-10 focus:input-primary">
-                        </div>
-                        <label class="label">
-                            <span class="label-text-alt text-gray-500">Project deadline (optional)</span>
-                        </label>
-                    </div>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Due Date</legend>
+                        <input type="date" name="due_date" class="input input-bordered focus:input-primary">
+                        <p class="text-sm text-gray-500 mt-2">Project deadline (optional)</p>
+                    </fieldset>
                 </div>
             </div>
             
@@ -517,60 +412,40 @@
                 </div>
                 
                 <!-- Description -->
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text font-medium text-gray-700">Description</span>
-                    </label>
+                <fieldset class="fieldset mt-2 mb-4">
+                    <legend class="fieldset-legend">Description</legend>
                     <textarea name="description" class="textarea textarea-bordered focus:textarea-primary" rows="4" placeholder="Describe the project scope, objectives, and deliverables..."></textarea>
-                    <label class="label">
-                        <span class="label-text-alt text-gray-500">Provide a clear overview of what this project entails</span>
-                    </label>
-                </div>
+                    <p class="text-sm text-gray-500 mt-2">Provide a clear overview of what this project entails</p>
+                </fieldset>
                 
                 <!-- Requirements -->
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text font-medium text-gray-700">Requirements</span>
-                    </label>
+                <fieldset class="fieldset mt-2 mb-4">
+                    <legend class="fieldset-legend">Requirements</legend>
                     <textarea name="requirements" class="textarea textarea-bordered focus:textarea-primary" rows="4" placeholder="List project requirements (one per line):\n• Responsive design\n• SEO optimization\n• Contact form integration"></textarea>
-                    <label class="label">
-                        <span class="label-text-alt text-gray-500">List specific requirements and features needed</span>
-                    </label>
-                </div>
+                    <p class="text-sm text-gray-500 mt-2">List specific requirements and features needed</p>
+                </fieldset>
                 
                 <!-- Notes -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium text-gray-700">Internal Notes</span>
-                    </label>
+                <fieldset class="fieldset mt-2">
+                    <legend class="fieldset-legend">Internal Notes</legend>
                     <textarea name="notes" class="textarea textarea-bordered focus:textarea-primary" rows="3" placeholder="Add any internal notes, special considerations, or reminders..."></textarea>
-                    <label class="label">
-                        <span class="label-text-alt text-gray-500">Internal notes visible only to admin and staff</span>
-                    </label>
-                </div>
+                    <p class="text-sm text-gray-500 mt-2">Internal notes visible only to admin and staff</p>
+                </fieldset>
             </div>
             
             <!-- Modal Actions -->
             <div class="flex items-center justify-between pt-6 border-t border-gray-200">
                 <div class="text-sm text-gray-500">
-                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+                    <i class="fas fa-info-circle mr-1"></i>
                     Fields marked with * are required
                 </div>
                 
                 <div class="flex space-x-3">
                     <button type="button" class="btn btn-outline" onclick="closeModal()">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        Cancel
+                        <i class="fas fa-times mr-2"></i>Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
-                        Save Project
+                        <i class="fas fa-save mr-2"></i>Save Project
                     </button>
                 </div>
             </div>
@@ -699,79 +574,195 @@ function assignProject(projectId) {
 }
 
 function markCompleted(projectId) {
-    if (confirm('Mark this project as completed?')) {
-        fetch(`/admin/projects/${projectId}/complete`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error marking project as completed');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Tandai selesai?',
+        text: 'Proyek akan ditandai sebagai selesai.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, selesai',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/projects/${projectId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Proyek berhasil ditandai selesai.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Terjadi kesalahan saat menandai selesai.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function holdProject(projectId) {
-    if (confirm('Put this project on hold?')) {
-        fetch(`/admin/projects/${projectId}/hold`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error putting project on hold');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Tahan proyek?',
+        text: 'Status proyek akan menjadi on hold.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, tahan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/projects/${projectId}/hold`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Ditahan',
+                        text: 'Proyek berhasil ditahan.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Terjadi kesalahan saat menahan proyek.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function resumeProject(projectId) {
-    if (confirm('Resume this project?')) {
-        fetch(`/admin/projects/${projectId}/resume`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error resuming project');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Lanjutkan proyek?',
+        text: 'Status proyek akan diubah menjadi aktif.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, lanjutkan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/projects/${projectId}/resume`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Dilanjutkan',
+                        text: 'Proyek berhasil dilanjutkan.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Terjadi kesalahan saat melanjutkan proyek.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function deleteProject(projectId) {
-    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-        fetch(`/admin/projects/${projectId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting project');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Anda yakin?',
+        text: 'Data yang dihapus tidak dapat dikembalikan!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/projects/${projectId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Terhapus!',
+                        text: 'Proyek berhasil dihapus.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Terjadi kesalahan saat menghapus proyek.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 // Progress range slider

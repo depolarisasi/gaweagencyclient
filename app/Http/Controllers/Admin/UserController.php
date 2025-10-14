@@ -74,7 +74,7 @@ class UserController extends Controller
         if ($user) {
           alert()->success('Success', 'User created successfully.');
         } else {
-            alert()->error('Error', 'Failed to create user.');
+         alert()->error('Error', 'Failed to create user.');
         } 
         return redirect()->route('admin.users.index');
     }

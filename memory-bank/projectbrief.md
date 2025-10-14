@@ -40,7 +40,7 @@ Berdasarkan PRD yang ada, sistem ini harus memiliki:
 
 ## Technology Stack
 - Laravel (Backend Framework)
-- Livewire (Frontend Reactivity)
+
 - Tailwind CSS + DaisyUI (Styling)
 - MySQL (Database)
 

@@ -32,7 +32,7 @@
                             <span>User Management</span>
                         </a>
                         
-                        <a href="{{ route('admin.products') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
+<a href="{{ route('admin.products.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
                             <i class="fas fa-box w-5"></i>
                             <span>Products</span>
                         </a>
@@ -144,10 +144,8 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Subject *</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Subject *</legend>
                                 <input type="text" name="subject" value="{{ old('subject', $ticket->subject) }}" 
                                        class="input input-bordered focus:input-primary @error('subject') input-error @enderror" 
                                        placeholder="Enter ticket subject" required>
@@ -156,19 +154,17 @@
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
-                            
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Client</span>
-                                </label>
+                            </fieldset>
+
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Client</legend>
                                 <input type="text" value="{{ $ticket->user->name }} ({{ $ticket->user->email }})" 
                                        class="input input-bordered bg-gray-100" readonly>
                                 <label class="label">
                                     <span class="label-text-alt text-gray-500">Client cannot be changed</span>
                                 </label>
-                            </div>
-                            
+                            </fieldset>
+
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Priority *</span>
@@ -202,16 +198,14 @@
                             </div>
                         </div>
                         
-                        <div class="form-control mt-4">
-                            <label class="label">
-                                <span class="label-text font-medium text-gray-700">Message</span>
-                            </label>
+                        <fieldset class="fieldset mt-4">
+                            <legend class="fieldset-legend">Message</legend>
                             <textarea name="message" class="textarea textarea-bordered focus:textarea-primary @error('message') textarea-error @enderror" 
                                       rows="4" placeholder="Ticket message or description" readonly>{{ $ticket->message }}</textarea>
                             <label class="label">
                                 <span class="label-text-alt text-gray-500">Original message cannot be edited</span>
                             </label>
-                        </div>
+                        </fieldset>
                     </div>
                     
                     <!-- Assignment Section -->
@@ -271,10 +265,8 @@
                             <h4 class="text-lg font-semibold text-gray-800">Internal Notes</h4>
                         </div>
                         
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium text-gray-700">Internal Notes</span>
-                            </label>
+                        <fieldset class="fieldset mt-2">
+                            <legend class="fieldset-legend">Internal Notes</legend>
                             <textarea name="internal_notes" class="textarea textarea-bordered focus:textarea-primary @error('internal_notes') textarea-error @enderror" 
                                       rows="4" placeholder="Internal notes for staff and admin only (not visible to client)">{{ old('internal_notes', $ticket->internal_notes) }}</textarea>
                             <label class="label">
@@ -285,7 +277,7 @@
                                     <span class="label-text-alt text-error">{{ $message }}</span>
                                 </label>
                             @enderror
-                        </div>
+                        </fieldset>
                     </div>
                     
                     <!-- Resolution Section -->
@@ -298,10 +290,8 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Resolved At</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Resolved At</legend>
                                 <input type="datetime-local" name="resolved_at" 
                                        value="{{ old('resolved_at', $ticket->resolved_at?->format('Y-m-d\TH:i')) }}" 
                                        class="input input-bordered focus:input-primary @error('resolved_at') input-error @enderror">
@@ -313,12 +303,10 @@
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
-                            
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Closed At</span>
-                                </label>
+                            </fieldset>
+
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Closed At</legend>
                                 <input type="datetime-local" name="closed_at" 
                                        value="{{ old('closed_at', $ticket->closed_at?->format('Y-m-d\TH:i')) }}" 
                                        class="input input-bordered focus:input-primary @error('closed_at') input-error @enderror">

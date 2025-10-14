@@ -344,53 +344,45 @@
         <form id="invoiceForm">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Client Selection -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Client *</span>
-                    </label>
-                    <select name="user_id" class="select select-bordered" required>
+                <fieldset class="border border-gray-200 rounded-lg p-4">
+                    <legend class="text-sm font-semibold text-gray-700 px-2">Client *</legend>
+                    <select name="user_id" class="select select-bordered w-full focus:select-primary" required>
                         <option value="">Select Client</option>
                         @foreach(\App\Models\User::where('role', 'client')->where('status', 'active')->get() as $client)
                             <option value="{{ $client->id }}">{{ $client->name }} ({{ $client->email }})</option>
                         @endforeach
                     </select>
-                </div>
-                
+                </fieldset>
+
                 <!-- Due Date -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Due Date *</span>
-                    </label>
-                    <input type="date" name="due_date" class="input input-bordered" required value="{{ now()->addDays(7)->format('Y-m-d') }}">
-                </div>
-                
+                <fieldset class="border border-gray-200 rounded-lg p-4">
+                    <legend class="text-sm font-semibold text-gray-700 px-2">Due Date *</legend>
+                    <input type="date" name="due_date" class="input input-bordered w-full focus:input-primary" required value="{{ now()->addDays(7)->format('Y-m-d') }}">
+                </fieldset>
+
                 <!-- Amount -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Amount *</span>
-                    </label>
-                    <input type="number" name="amount" class="input input-bordered" step="0.01" min="0" required placeholder="0.00">
-                </div>
-                
+                <fieldset class="border border-gray-200 rounded-lg p-4">
+                    <legend class="text-sm font-semibold text-gray-700 px-2">Amount *</legend>
+                    <input type="number" name="amount" class="input input-bordered w-full focus:input-primary" step="0.01" min="0" required placeholder="0.00">
+                </fieldset>
+
                 <!-- Tax Amount -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Tax Amount</span>
-                    </label>
-                    <input type="number" name="tax_amount" class="input input-bordered" step="0.01" min="0" placeholder="0.00">
-                </div>
-                
+                <fieldset class="border border-gray-200 rounded-lg p-4">
+                    <legend class="text-sm font-semibold text-gray-700 px-2">Tax Amount</legend>
+                    <input type="number" name="tax_amount" class="input input-bordered w-full focus:input-primary" step="0.01" min="0" placeholder="0.00">
+                </fieldset>
+
                 <!-- Notes -->
-                <div class="form-control md:col-span-2">
-                    <label class="label">
-                        <span class="label-text font-medium">Notes</span>
-                    </label>
-                    <textarea name="notes" class="textarea textarea-bordered" rows="3" placeholder="Additional notes for this invoice..."></textarea>
-                </div>
+                <fieldset class="md:col-span-2 border border-gray-200 rounded-lg p-4">
+                    <legend class="text-sm font-semibold text-gray-700 px-2">Notes</legend>
+                    <textarea name="notes" class="textarea textarea-bordered w-full focus:textarea-primary" rows="3" placeholder="Additional notes for this invoice..."></textarea>
+                </fieldset>
             </div>
-            
+
             <div class="modal-action">
-                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn" onclick="closeModal()">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save mr-2"></i>Create Invoice
                 </button>
@@ -399,6 +391,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 function openCreateModal() {
     document.getElementById('modalTitle').textContent = 'Create New Invoice';
@@ -419,79 +412,195 @@ function editInvoice(invoiceId) {
 }
 
 function sendInvoice(invoiceId) {
-    if (confirm('Send this invoice to the client?')) {
-        fetch(`/admin/invoices/${invoiceId}/send`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error sending invoice');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Kirim invoice?',
+        text: 'Invoice akan dikirim ke klien.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, kirim',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/invoices/${invoiceId}/send`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Terkirim',
+                        text: 'Invoice berhasil dikirim.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat mengirim invoice.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function markAsPaid(invoiceId) {
-    if (confirm('Mark this invoice as paid?')) {
-        fetch(`/admin/invoices/${invoiceId}/mark-paid`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error marking invoice as paid');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Tandai sebagai dibayar?',
+        text: 'Status invoice akan menjadi paid.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, tandai',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/invoices/${invoiceId}/mark-paid`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Invoice ditandai sebagai dibayar.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat menandai invoice dibayar.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function cancelInvoice(invoiceId) {
-    if (confirm('Cancel this invoice?')) {
-        fetch(`/admin/invoices/${invoiceId}/cancel`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error cancelling invoice');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Batalkan invoice?',
+        text: 'Invoice akan dibatalkan.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, batalkan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/invoices/${invoiceId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Dibatalkan',
+                        text: 'Invoice berhasil dibatalkan.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat membatalkan invoice.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function deleteInvoice(invoiceId) {
-    if (confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
-        fetch(`/admin/invoices/${invoiceId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting invoice');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Anda yakin?',
+        text: 'Data yang dihapus tidak dapat dikembalikan!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/invoices/${invoiceId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Terhapus!',
+                        text: 'Invoice berhasil dihapus.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Terjadi kesalahan saat menghapus invoice.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function downloadInvoice(invoiceId) {

@@ -12,8 +12,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     @stack('styles')
-    @livewireStyles
-</head>
+    </head>
 <body>
     <div class="min-h-screen bg-gray-50">
         <div class="flex">
@@ -44,7 +43,7 @@
                                 <span>User Management</span>
                             </a>
                             
-                            <a href="{{ route('admin.products') }}" class="flex items-center space-x-3 px-4 py-3 {{ request()->routeIs('admin.products') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }} rounded-lg transition-colors">
+                            <a href="{{ route('admin.products.index') }}" class="flex items-center space-x-3 px-4 py-3 {{ request()->routeIs('admin.products') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }} rounded-lg transition-colors">
                                 <i class="fas fa-box w-5"></i>
                                 <span>Products</span>
                             </a>
@@ -103,7 +102,6 @@
         </div>
     </div>
     
-    @livewireScripts
-    @stack('scripts')
+        @stack('scripts')
 </body>
 </html>

@@ -29,6 +29,12 @@ class Kernel extends ConsoleKernel
                  ->dailyAt('07:00')
                  ->withoutOverlapping()
                  ->runInBackground();
+
+        // Cancel unpaid invoices daily at 01:00 AM
+        $schedule->command('invoice:cancel-unpaid')
+                 ->dailyAt('01:00')
+                 ->withoutOverlapping()
+                 ->runInBackground();
     }
 
     /**

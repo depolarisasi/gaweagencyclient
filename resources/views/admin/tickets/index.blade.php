@@ -377,14 +377,14 @@
     <div class="modal-box w-11/12 max-w-3xl">
         <h3 class="font-bold text-lg mb-4" id="modalTitle">Create New Ticket</h3>
         
-        <form id="ticketForm">
+        <form id="ticketForm" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Client -->
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text font-medium">Client *</span>
                     </label>
-                    <select name="user_id" class="select select-bordered" required>
+                    <select name="user_id" class="select select-bordered focus:select-primary" required>
                         <option value="">Select Client</option>
                         @foreach(\App\Models\User::where('role', 'client')->where('status', 'active')->get() as $client)
                             <option value="{{ $client->id }}">{{ $client->name }} ({{ $client->email }})</option>
@@ -397,7 +397,7 @@
                     <label class="label">
                         <span class="label-text font-medium">Assign To</span>
                     </label>
-                    <select name="assigned_to" class="select select-bordered">
+                    <select name="assigned_to" class="select select-bordered focus:select-primary">
                         <option value="">Select Staff Member</option>
                         @foreach(\App\Models\User::where('role', 'staff')->where('status', 'active')->get() as $staff)
                             <option value="{{ $staff->id }}">{{ $staff->name }}</option>
@@ -410,7 +410,7 @@
                     <label class="label">
                         <span class="label-text font-medium">Priority *</span>
                     </label>
-                    <select name="priority" class="select select-bordered" required>
+                    <select name="priority" class="select select-bordered focus:select-primary" required>
                         <option value="medium">Medium</option>
                         <option value="high">High</option>
                         <option value="low">Low</option>
@@ -422,7 +422,7 @@
                     <label class="label">
                         <span class="label-text font-medium">Category *</span>
                     </label>
-                    <select name="category" class="select select-bordered" required>
+                    <select name="category" class="select select-bordered focus:select-primary" required>
                         <option value="general">General</option>
                         <option value="technical">Technical</option>
                         <option value="billing">Billing</option>
@@ -431,24 +431,20 @@
                 </div>
                 
                 <!-- Subject -->
-                <div class="form-control md:col-span-2">
-                    <label class="label">
-                        <span class="label-text font-medium">Subject *</span>
-                    </label>
-                    <input type="text" name="subject" class="input input-bordered" required placeholder="Brief description of the issue">
-                </div>
+                <fieldset class="fieldset md:col-span-2 mt-2">
+                    <legend class="fieldset-legend">Subject *</legend>
+                    <input type="text" name="subject" class="input input-bordered focus:input-primary" required placeholder="Brief description of the issue">
+                </fieldset>
                 
                 <!-- Description -->
-                <div class="form-control md:col-span-2">
-                    <label class="label">
-                        <span class="label-text font-medium">Description *</span>
-                    </label>
-                    <textarea name="description" class="textarea textarea-bordered" rows="4" required placeholder="Detailed description of the issue or request..."></textarea>
-                </div>
+                <fieldset class="fieldset md:col-span-2 mt-2">
+                    <legend class="fieldset-legend">Description *</legend>
+                    <textarea name="description" class="textarea textarea-bordered focus:textarea-primary" rows="4" required placeholder="Detailed description of the issue or request..."></textarea>
+                </fieldset>
             </div>
             
             <div class="modal-action">
-                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn" onclick="closeModal()"><i class="fas fa-times mr-2"></i>Cancel</button>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save mr-2"></i>Create Ticket
                 </button>
@@ -538,79 +534,195 @@ function assignTicket(ticketId) {
 }
 
 function markInProgress(ticketId) {
-    if (confirm('Mark this ticket as in progress?')) {
-        fetch(`/admin/tickets/${ticketId}/in-progress`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error updating ticket status');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Tandai in progress?',
+        text: 'Status tiket akan menjadi in progress.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, lanjutkan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/tickets/${ticketId}/in-progress`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Tiket ditandai in progress.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat memperbarui status tiket.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function markResolved(ticketId) {
-    if (confirm('Mark this ticket as resolved?')) {
-        fetch(`/admin/tickets/${ticketId}/resolve`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error resolving ticket');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Tandai resolved?',
+        text: 'Tiket akan ditandai sebagai resolved.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, selesai',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/tickets/${ticketId}/resolve`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Tiket berhasil ditandai resolved.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat menandai tiket resolved.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function closeTicket(ticketId) {
-    if (confirm('Close this ticket?')) {
-        fetch(`/admin/tickets/${ticketId}/close`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error closing ticket');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Tutup tiket?',
+        text: 'Tiket akan ditutup.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, tutup',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/tickets/${ticketId}/close`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Tiket berhasil ditutup.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat menutup tiket.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function deleteTicket(ticketId) {
-    if (confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
-        fetch(`/admin/tickets/${ticketId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting ticket');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Anda yakin?',
+        text: 'Data yang dihapus tidak dapat dikembalikan!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/tickets/${ticketId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Terhapus!',
+                        text: 'Tiket berhasil dihapus.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Terjadi kesalahan saat menghapus tiket.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 // Handle ticket form submission

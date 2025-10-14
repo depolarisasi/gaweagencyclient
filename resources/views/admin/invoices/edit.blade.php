@@ -32,7 +32,7 @@
                             <span>User Management</span>
                         </a>
                         
-                        <a href="{{ route('admin.products') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
+<a href="{{ route('admin.products.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
                             <i class="fas fa-box w-5"></i>
                             <span>Products</span>
                         </a>
@@ -182,32 +182,28 @@
                                 @enderror
                             </div>
                             
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Due Date *</span>
-                                </label>
+                            <fieldset class="border border-gray-200 rounded-lg p-4">
+                                <legend class="text-sm font-semibold text-gray-700 px-2">Due Date *</legend>
                                 <input type="date" name="due_date" value="{{ old('due_date', $invoice->due_date->format('Y-m-d')) }}" 
-                                       class="input input-bordered focus:input-primary @error('due_date') input-error @enderror" required>
+                                       class="input input-bordered w-full focus:input-primary @error('due_date') input-error @enderror" required>
                                 @error('due_date')
                                     <label class="label">
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                         </div>
                         
-                        <div class="form-control mt-4">
-                            <label class="label">
-                                <span class="label-text font-medium text-gray-700">Description</span>
-                            </label>
-                            <textarea name="description" class="textarea textarea-bordered focus:textarea-primary @error('description') textarea-error @enderror" 
+                        <fieldset class="mt-4 border border-gray-200 rounded-lg p-4">
+                            <legend class="text-sm font-semibold text-gray-700 px-2">Description</legend>
+                            <textarea name="description" class="textarea textarea-bordered w-full focus:textarea-primary @error('description') textarea-error @enderror" 
                                       rows="3" placeholder="Invoice description or notes">{{ old('description', $invoice->description) }}</textarea>
                             @error('description')
                                 <label class="label">
                                     <span class="label-text-alt text-error">{{ $message }}</span>
                                 </label>
                             @enderror
-                        </div>
+                        </fieldset>
                     </div>
                     
                     <!-- Amount Information Section -->
@@ -220,47 +216,41 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Subtotal Amount *</span>
-                                </label>
+                            <fieldset class="border border-gray-200 rounded-lg p-4">
+                                <legend class="text-sm font-semibold text-gray-700 px-2">Subtotal Amount *</legend>
                                 <input type="number" name="amount" value="{{ old('amount', $invoice->amount) }}" 
-                                       class="input input-bordered focus:input-primary @error('amount') input-error @enderror" 
+                                       class="input input-bordered w-full focus:input-primary @error('amount') input-error @enderror" 
                                        step="0.01" min="0" placeholder="0.00" required>
                                 @error('amount')
                                     <label class="label">
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                             
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Tax Amount</span>
-                                </label>
+                            <fieldset class="border border-gray-200 rounded-lg p-4">
+                                <legend class="text-sm font-semibold text-gray-700 px-2">Tax Amount</legend>
                                 <input type="number" name="tax_amount" value="{{ old('tax_amount', $invoice->tax_amount) }}" 
-                                       class="input input-bordered focus:input-primary @error('tax_amount') input-error @enderror" 
+                                       class="input input-bordered w-full focus:input-primary @error('tax_amount') input-error @enderror" 
                                        step="0.01" min="0" placeholder="0.00">
                                 @error('tax_amount')
                                     <label class="label">
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                             
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Total Amount *</span>
-                                </label>
+                            <fieldset class="border border-gray-200 rounded-lg p-4">
+                                <legend class="text-sm font-semibold text-gray-700 px-2">Total Amount *</legend>
                                 <input type="number" name="total_amount" value="{{ old('total_amount', $invoice->total_amount) }}" 
-                                       class="input input-bordered focus:input-primary @error('total_amount') input-error @enderror" 
+                                       class="input input-bordered w-full focus:input-primary @error('total_amount') input-error @enderror" 
                                        step="0.01" min="0" placeholder="0.00" required>
                                 @error('total_amount')
                                     <label class="label">
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                         </div>
                         
                         <div class="alert alert-info mt-4">
@@ -284,26 +274,22 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Payment Method</span>
-                                </label>
+                            <fieldset class="border border-gray-200 rounded-lg p-4">
+                                <legend class="text-sm font-semibold text-gray-700 px-2">Payment Method</legend>
                                 <input type="text" name="payment_method" value="{{ old('payment_method', $invoice->payment_method) }}" 
-                                       class="input input-bordered focus:input-primary @error('payment_method') input-error @enderror" 
+                                       class="input input-bordered w-full focus:input-primary @error('payment_method') input-error @enderror" 
                                        placeholder="e.g., Bank Transfer, Credit Card">
                                 @error('payment_method')
                                     <label class="label">
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                             
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Payment Date</span>
-                                </label>
+                            <fieldset class="border border-gray-200 rounded-lg p-4">
+                                <legend class="text-sm font-semibold text-gray-700 px-2">Payment Date</legend>
                                 <input type="date" name="paid_date" value="{{ old('paid_date', $invoice->paid_date?->format('Y-m-d')) }}" 
-                                       class="input input-bordered focus:input-primary @error('paid_date') input-error @enderror">
+                                       class="input input-bordered w-full focus:input-primary @error('paid_date') input-error @enderror">
                                 <label class="label">
                                     <span class="label-text-alt text-gray-500">Leave empty if not paid yet</span>
                                 </label>
@@ -312,7 +298,7 @@
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                         </div>
                     </div>
                     

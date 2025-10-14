@@ -38,7 +38,7 @@
                             <span>User Management</span>
                         </a>
                         
-                        <a href="{{ route('admin.products') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
+<a href="{{ route('admin.products.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                             </svg>
@@ -188,26 +188,20 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Tripay Merchant Code</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Tripay Merchant Code</legend>
                                 <input type="text" class="input input-bordered focus:input-primary" placeholder="Enter merchant code">
-                            </div>
+                            </fieldset>
                             
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">API Key</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">API Key</legend>
                                 <input type="password" class="input input-bordered focus:input-primary" placeholder="Enter API key">
-                            </div>
+                            </fieldset>
                             
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Private Key</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Private Key</legend>
                                 <input type="password" class="input input-bordered focus:input-primary" placeholder="Enter private key">
-                            </div>
+                            </fieldset>
                             
                             <div class="form-control">
                                 <label class="label">
@@ -219,15 +213,13 @@
                                 </select>
                             </div>
                             
-                            <div class="form-control md:col-span-2">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Callback URL</span>
-                                </label>
+                            <fieldset class="fieldset md:col-span-2 mt-2">
+                                <legend class="fieldset-legend">Callback URL</legend>
                                 <input type="url" class="input input-bordered focus:input-primary" value="{{ url('/payment/callback') }}" readonly>
                                 <label class="label">
                                     <span class="label-text-alt text-gray-500">This URL should be configured in your Tripay dashboard</span>
                                 </label>
-                            </div>
+                            </fieldset>
                         </div>
                     </div>
                     

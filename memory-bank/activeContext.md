@@ -13,7 +13,7 @@ Big Pappa meminta untuk:
 - **Client**: dashboard.blade.php
 - **Staff**: dashboard.blade.php
 - **Auth**: login.blade.php, register.blade.php
-- **Livewire**: product-management.blade.php, checkout-process.blade.php, product-showcase.blade.php
+
 
 ### Models yang Ada:
 - User, Product, ProductAddon, Project, Order, Invoice
@@ -25,10 +25,7 @@ Big Pappa meminta untuk:
 - Staff/DashboardController
 - Auth controllers
 
-### Livewire Components:
-- Admin/ProductManagement
-- CheckoutProcess
-- ProductShowcase
+
 
 ## Missing Components (Based on PRD)
 

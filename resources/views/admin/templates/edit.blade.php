@@ -32,7 +32,7 @@
                             <span>User Management</span>
                         </a>
                         
-                        <a href="{{ route('admin.products') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
+<a href="{{ route('admin.products.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
                             <i class="fas fa-box w-5"></i>
                             <span>Products</span>
                         </a>
@@ -144,10 +144,8 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Template Name *</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Template Name *</legend>
                                 <input type="text" name="name" value="{{ old('name', $template->name) }}" 
                                        class="input input-bordered focus:input-primary @error('name') input-error @enderror" 
                                        placeholder="Enter template name" required>
@@ -156,8 +154,8 @@
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
-                            
+                            </fieldset>
+
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Category *</span>
@@ -177,10 +175,8 @@
                                 @enderror
                             </div>
                             
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Demo URL</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Demo URL</legend>
                                 <input type="url" name="demo_url" value="{{ old('demo_url', $template->demo_url) }}" 
                                        class="input input-bordered focus:input-primary @error('demo_url') input-error @enderror" 
                                        placeholder="https://demo.example.com">
@@ -189,12 +185,10 @@
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                             
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Thumbnail URL</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Thumbnail URL</legend>
                                 <input type="url" name="thumbnail_url" value="{{ old('thumbnail_url', $template->thumbnail_url) }}" 
                                        class="input input-bordered focus:input-primary @error('thumbnail_url') input-error @enderror" 
                                        placeholder="https://example.com/thumbnail.jpg">
@@ -203,13 +197,11 @@
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                         </div>
                         
-                        <div class="form-control mt-4">
-                            <label class="label">
-                                <span class="label-text font-medium text-gray-700">Description *</span>
-                            </label>
+                        <fieldset class="fieldset mt-4">
+                            <legend class="fieldset-legend">Description *</legend>
                             <textarea name="description" class="textarea textarea-bordered focus:textarea-primary @error('description') textarea-error @enderror" 
                                       rows="3" placeholder="Enter template description" required>{{ old('description', $template->description) }}</textarea>
                             @error('description')
@@ -217,7 +209,7 @@
                                     <span class="label-text-alt text-error">{{ $message }}</span>
                                 </label>
                             @enderror
-                        </div>
+                        </fieldset>
                     </div>
                     
                     <!-- Template Features Section -->
@@ -229,10 +221,8 @@
                             <h4 class="text-lg font-semibold text-gray-800">Template Features</h4>
                         </div>
                         
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium text-gray-700">Features (One per line)</span>
-                            </label>
+                        <fieldset class="fieldset mt-2">
+                            <legend class="fieldset-legend">Features (One per line)</legend>
                             <textarea name="features" class="textarea textarea-bordered focus:textarea-primary @error('features') textarea-error @enderror" 
                                       rows="6" placeholder="Enter each feature on a new line&#10;Example:&#10;Responsive Design&#10;SEO Optimized&#10;Contact Form&#10;Gallery Section">{{ old('features', $template->features ? implode("\n", $template->features) : '') }}</textarea>
                             <label class="label">
@@ -243,7 +233,7 @@
                                     <span class="label-text-alt text-error">{{ $message }}</span>
                                 </label>
                             @enderror
-                        </div>
+                        </fieldset>
                     </div>
                     
                     <!-- Template Settings Section -->
@@ -256,10 +246,8 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text font-medium text-gray-700">Sort Order</span>
-                                </label>
+                            <fieldset class="fieldset mt-2">
+                                <legend class="fieldset-legend">Sort Order</legend>
                                 <input type="number" name="sort_order" value="{{ old('sort_order', $template->sort_order) }}" 
                                        class="input input-bordered focus:input-primary @error('sort_order') input-error @enderror" 
                                        min="0" placeholder="0">
@@ -271,7 +259,7 @@
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
                                 @enderror
-                            </div>
+                            </fieldset>
                             
                             <div class="form-control">
                                 <label class="label">

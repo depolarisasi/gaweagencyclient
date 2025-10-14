@@ -14,7 +14,7 @@ class TestRunner
             'AuthenticationTest' => 'tests/Unit/AuthenticationTest.php',
             'UserManagementTest' => 'tests/Unit/UserManagementTest.php',
             'ProjectManagementTest' => 'tests/Unit/ProjectManagementTest.php',
-            'ProductManagementTest' => 'tests/Unit/ProductManagementTest.php',
+
             'InvoiceManagementTest' => 'tests/Unit/InvoiceManagementTest.php',
             'TicketManagementTest' => 'tests/Unit/TicketManagementTest.php',
             'TemplateManagementTest' => 'tests/Unit/TemplateManagementTest.php'
@@ -51,7 +51,7 @@ class TestRunner
             'Bulk operations'
         ],
         'Product Management' => [
-            'Livewire component testing',
+
             'Product CRUD via admin interface',
             'Pricing calculations',
             'Feature management',

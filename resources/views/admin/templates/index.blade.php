@@ -358,10 +358,8 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Template Name -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Template Name *</span>
-                        </label>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Template Name *</legend>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -370,7 +368,7 @@
                             </div>
                             <input type="text" name="name" class="input input-bordered pl-10 focus:input-primary" required placeholder="Enter template name">
                         </div>
-                    </div>
+                    </fieldset>
                     
                     <!-- Category -->
                     <div class="form-control">
@@ -402,10 +400,8 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Demo URL -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Demo URL</span>
-                        </label>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Demo URL</legend>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,13 +413,11 @@
                         <label class="label">
                             <span class="label-text-alt text-gray-500">Live preview URL for clients</span>
                         </label>
-                    </div>
+                    </fieldset>
                     
                     <!-- Thumbnail URL -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Thumbnail URL</span>
-                        </label>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Thumbnail URL</legend>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -435,7 +429,7 @@
                         <label class="label">
                             <span class="label-text-alt text-gray-500">Template preview image</span>
                         </label>
-                    </div>
+                    </fieldset>
                 </div>
             </div>
             
@@ -453,10 +447,8 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Sort Order -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium text-gray-700">Sort Order</span>
-                        </label>
+                    <fieldset class="fieldset mt-2">
+                        <legend class="fieldset-legend">Sort Order</legend>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -468,7 +460,7 @@
                         <label class="label">
                             <span class="label-text-alt text-gray-500">Lower numbers appear first</span>
                         </label>
-                    </div>
+                    </fieldset>
                     
                     <!-- Status -->
                     <div class="form-control">
@@ -498,26 +490,22 @@
                 </div>
                 
                 <!-- Description -->
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text font-medium text-gray-700">Description</span>
-                    </label>
+                <fieldset class="fieldset mb-4">
+                    <legend class="fieldset-legend">Description</legend>
                     <textarea name="description" class="textarea textarea-bordered focus:textarea-primary" rows="4" placeholder="Describe the template design, style, and target audience..."></textarea>
                     <label class="label">
                         <span class="label-text-alt text-gray-500">Provide a clear description of the template</span>
                     </label>
-                </div>
+                </fieldset>
                 
                 <!-- Features -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium text-gray-700">Features</span>
-                    </label>
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">Features</legend>
                     <textarea name="features" class="textarea textarea-bordered focus:textarea-primary" rows="5" placeholder="List template features (one per line):\n• Responsive Design\n• Modern Layout\n• SEO Optimized\n• Contact Form\n• Gallery Section"></textarea>
                     <label class="label">
                         <span class="label-text-alt text-gray-500">Enter each feature on a new line to highlight template capabilities</span>
                     </label>
-                </div>
+                </fieldset>
             </div>
             
             <!-- Modal Actions -->
@@ -548,6 +536,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 let isEditMode = false;
 let currentTemplateId = null;
@@ -591,60 +580,147 @@ function editTemplate(templateId) {
 }
 
 function toggleStatus(templateId) {
-    if (confirm('Are you sure you want to change this template status?')) {
-        fetch(`/admin/templates/${templateId}/toggle-status`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error changing template status');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Ubah status template?',
+        text: 'Status aktif/nonaktif akan diperbarui.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, ubah',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/templates/${templateId}/toggle-status`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Status template diperbarui.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat mengubah status template.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function duplicateTemplate(templateId) {
-    if (confirm('Create a copy of this template?')) {
-        fetch(`/admin/templates/${templateId}/duplicate`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error duplicating template');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Duplikasi template?',
+        text: 'Salinan baru akan dibuat dari template ini.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, duplikasi',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/templates/${templateId}/duplicate`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Template berhasil diduplikasi.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat menduplikasi template.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function deleteTemplate(templateId) {
-    if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
-        fetch(`/admin/templates/${templateId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting template');
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Anda yakin?',
+        text: 'Template yang dihapus tidak dapat dikembalikan!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/templates/${templateId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Terhapus!',
+                        text: 'Template berhasil dihapus.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Terjadi kesalahan saat menghapus template.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 // Handle template form submission

@@ -123,88 +123,209 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 function markAsPaid(invoiceId) {
-    if (confirm('Mark this invoice as paid?')) {
-        const paymentMethod = prompt('Enter payment method:', 'Bank Transfer');
-        if (paymentMethod) {
+    Swal.fire({
+        title: 'Tandai invoice dibayar?',
+        text: 'Masukkan metode pembayaran.',
+        input: 'text',
+        inputPlaceholder: 'Metode pembayaran',
+        inputValue: 'Bank Transfer',
+        showCancelButton: true,
+        confirmButtonText: 'Simpan',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        preConfirm: (paymentMethod) => {
+            if (!paymentMethod) {
+                Swal.showValidationMessage('Metode pembayaran wajib diisi');
+            }
+            return paymentMethod;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const paymentMethod = result.value;
             fetch(`/admin/invoices/${invoiceId}/mark-paid`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    payment_method: paymentMethod
-                })
+                body: JSON.stringify({ payment_method: paymentMethod })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    location.reload();
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Invoice ditandai dibayar.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
                 } else {
-                    alert('Error: ' + data.message);
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat menandai invoice dibayar.',
+                        icon: 'error'
+                    });
                 }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
             });
         }
-    }
+    });
 }
 
 function sendInvoice(invoiceId) {
-    if (confirm('Send this invoice to the client?')) {
-        fetch(`/admin/invoices/${invoiceId}/send`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Kirim invoice?',
+        text: 'Invoice akan dikirim ke klien.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, kirim',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/invoices/${invoiceId}/send`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Terkirim',
+                        text: 'Invoice berhasil dikirim.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat mengirim invoice.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function markAsOverdue(invoiceId) {
-    if (confirm('Mark this invoice as overdue?')) {
-        fetch(`/admin/invoices/${invoiceId}/mark-overdue`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Tandai overdue?',
+        text: 'Invoice akan ditandai sebagai overdue.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, tandai',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/invoices/${invoiceId}/mark-overdue`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Invoice ditandai sebagai overdue.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat menandai invoice overdue.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 
 function cancelInvoice(invoiceId) {
-    if (confirm('Cancel this invoice?')) {
-        fetch(`/admin/invoices/${invoiceId}/cancel`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        });
-    }
+    Swal.fire({
+        title: 'Batalkan invoice?',
+        text: 'Invoice akan dibatalkan.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, batalkan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/invoices/${invoiceId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Dibatalkan',
+                        text: 'Invoice berhasil dibatalkan.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat membatalkan invoice.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 </script>
 @endsection

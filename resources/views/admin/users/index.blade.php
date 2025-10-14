@@ -5,8 +5,7 @@
 @section('content')
 <div class="min-h-screen bg-gray-50">
     <div class="flex">
-    @include('layouts.sidebar')
-      
+    @include('layouts.sidebar') 
         <!-- Main Content -->
         <div class="flex-1 p-8">
             <!-- Header -->
@@ -115,7 +114,7 @@
             <!-- Users Table -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="table w-full">
+                    <table id="user" class="table w-full">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="text-left font-semibold text-gray-900">User</th>
@@ -188,9 +187,16 @@
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         @if($user->id !== auth()->id())
-                                        <button onclick="deleteUser({{ $user->id }})" class="btn btn-sm btn-error">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                       <form action="{{ url('/admin/users/'.$user->id) }}" method="POST" class="d-inline-block delete-form">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                    class="btn btn-sm btn-error" {{-- Class delete-btn tidak lagi diperlukan di sini --}}
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Delete">
+                                                <i class="fas fa-trash fs-4"></i>
+                                            </button>
+                                        </form>
                                         @endif
                                     </div>
                                 </td>
@@ -219,39 +225,43 @@
 </div>
  
 
-<script>
-let isEditMode = false;
-let currentUserId = null;
  
- 
- 
+@endsection
 
-function deleteUser(userId) {
-    if (confirm('Are you sure you want to delete this user?')) {
-        fetch(`/admin/users/${userId}`, {
-            method: 'DELETE',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting user: ' + (data.message || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error deleting user. Please try again.');
+@section('scripts')  
+<script>
+// Menunggu seluruh konten HTML dimuat sebelum menjalankan skrip
+document.addEventListener('DOMContentLoaded', function() {
+
+    // 1. Pilih SEMUA form dengan class 'delete-form'
+    const deleteForms = document.querySelectorAll('.delete-form');
+
+    // 2. Tambahkan event listener ke setiap form yang ditemukan
+    deleteForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            // Mencegah form dari submit secara langsung
+            e.preventDefault();
+
+            // Tampilkan konfirmasi SweetAlert
+            Swal.fire({
+                title: 'Anda yakin?',
+                text: "Data yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                // Jika pengguna mengonfirmasi
+                if (result.isConfirmed) {
+                    // Lanjutkan submit form
+                    form.submit();
+                }
+            });
         });
-    }
-}
- 
- 
+    });
+
+});
 </script>
 @endsection

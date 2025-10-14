@@ -134,7 +134,7 @@ Tujuan Pengguna:
 
     Pemilihan: Calon klien mengunjungi halaman publik, melihat galeri template website, dan memilih salah satu.
 
-    Konfigurasi: Klien memilih siklus penagihan (misal: Tahunan) dan menambahkan add-on jika diperlukan.
+    Konfigurasi: Klien memilih siklus penagihan (misal: Tahunan) dan menambahkan add-on jika diperlukan. Ini adalah cart system, pembeli dapat abandon pesanan atau konfigurasinya yang dapat dicheckout kapan saja dengan masa berlaku 7 hari untuk cart tersebut
 
     Checkout: Sistem menampilkan ringkasan pesanan. Klien mengisi informasi pribadi dan mendaftarkan akun.
 

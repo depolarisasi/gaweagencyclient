@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\User;
+use App\Notifications\ProjectActivatedNotification;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Notification;
 
 class ProjectController extends Controller
 {
@@ -89,7 +91,21 @@ class ProjectController extends Controller
             'start_date' => 'nullable|date',
             'due_date' => 'nullable|date|after_or_equal:start_date',
             'notes' => 'nullable|string|max:1000',
+            'website_url' => 'nullable|url|max:255',
+            'admin_url' => 'nullable|url|max:255',
+            'admin_username' => 'nullable|string|max:255',
+            'admin_password' => 'nullable|string|max:255',
         ]);
+        
+        // Conditional validation for website access information when status is active
+        if ($request->status === 'active') {
+            $validated = $request->validate([
+                'website_url' => 'required|url|max:255',
+                'admin_url' => 'required|url|max:255',
+                'admin_username' => 'required|string|max:255',
+                'admin_password' => 'required|string|max:255',
+            ]);
+        }
         
         // Process requirements (convert from textarea to array)
         if ($validated['requirements']) {
@@ -153,11 +169,30 @@ class ProjectController extends Controller
             'start_date' => 'nullable|date',
             'due_date' => 'nullable|date|after_or_equal:start_date',
             'notes' => 'nullable|string|max:1000',
+            'website_url' => 'nullable|url|max:255',
+            'admin_url' => 'nullable|url|max:255',
+            'admin_username' => 'nullable|string|max:255',
+            'admin_password' => 'nullable|string|max:255',
         ]);
         
         // Process requirements (convert from textarea to array)
-        if ($validated['requirements']) {
+        if (isset($validated['requirements'])) {
             $validated['requirements'] = array_filter(explode("\n", $validated['requirements']));
+        }
+        
+        // If status is changed to active, set start_date if null and require website access info
+        if ($request->status === 'active' && $project->status !== 'active') {
+            if (empty($validated['start_date'])) {
+                $validated['start_date'] = now();
+            }
+            
+            $websiteAccessValidated = $request->validate([
+                'website_url' => 'required|url|max:255',
+                'admin_url' => 'required|url|max:255',
+                'admin_username' => 'required|string|max:255',
+                'admin_password' => 'required|string|max:255',
+            ]);
+            $validated = array_merge($validated, $websiteAccessValidated);
         }
         
         // If status is changed to completed, set completed date
@@ -167,6 +202,11 @@ class ProjectController extends Controller
         }
         
         $project->update($validated);
+
+        // Send notification if project status changes to active
+        if ($validated['status'] === 'active' && $project->getOriginal('status') !== 'active') {
+            $project->user->notify(new ProjectActivatedNotification($project));
+        }
         
         if ($request->expectsJson()) {
             return response()->json([
