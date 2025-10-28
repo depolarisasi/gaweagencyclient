@@ -110,7 +110,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Paid This Month</p>
-                            <p class="text-3xl font-bold text-gray-900">Rp {{ number_format(\App\Models\Invoice::where('status', 'paid')->whereMonth('paid_at', now()->month)->sum('total_amount'), 0, ',', '.') }}</p>
+                            <p class="text-3xl font-bold text-gray-900">Rp {{ number_format(\App\Models\Invoice::where('status', 'paid')->whereMonth('paid_date', now()->month)->sum('total_amount'), 0, ',', '.') }}</p>
                         </div>
                         <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                             <i class="fas fa-money-bill text-green-600 text-xl"></i>
@@ -184,12 +184,36 @@
                 </form>
             </div>
             
+            <!-- Bulk Actions Bar -->
+            <div id="bulkActionsBar" class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 hidden">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <span id="selectedCount" class="text-blue-700 font-medium">0 invoices selected</span>
+                        <button onclick="clearSelection()" class="text-blue-600 hover:text-blue-800 text-sm">Clear selection</button>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <select id="bulkActionSelect" class="select select-bordered select-sm">
+                            <option value="">Choose action...</option>
+                            <option value="mark_paid">Mark as Paid</option>
+                            <option value="cancel">Cancel Invoices</option>
+                            <option value="delete">Delete Invoices</option>
+                        </select>
+                        <button onclick="executeBulkAction()" class="btn btn-primary btn-sm">
+                            <i class="fas fa-play mr-2"></i>Execute
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Invoices Table -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="table w-full">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="text-left font-semibold text-gray-900">
+                                    <input type="checkbox" id="selectAll" class="checkbox checkbox-primary" onchange="toggleSelectAll()">
+                                </th>
                                 <th class="text-left font-semibold text-gray-900">Invoice</th>
                                 <th class="text-left font-semibold text-gray-900">Client</th>
                                 <th class="text-left font-semibold text-gray-900">Amount</th>
@@ -202,6 +226,10 @@
                         <tbody>
                             @forelse($invoices as $invoice)
                             <tr class="hover:bg-gray-50 transition-colors">
+                                <td>
+                                    <input type="checkbox" class="checkbox checkbox-primary invoice-checkbox" 
+                                           value="{{ $invoice->id }}" onchange="updateBulkActions()">
+                                </td>
                                 <td>
                                     <div>
                                         <p class="font-semibold text-gray-900">#{{ $invoice->invoice_number }}</p>
@@ -264,10 +292,10 @@
                                     </div>
                                 </td>
                                 <td>
-                                    @if($invoice->paid_at)
+                                    @if($invoice->paid_date)
                                         <div>
                                             <p class="text-sm text-green-600 font-medium">Paid</p>
-                                            <p class="text-xs text-gray-500">{{ $invoice->paid_at->format('M d, Y') }}</p>
+                                            <p class="text-xs text-gray-500">{{ $invoice->paid_date->format('M d, Y') }}</p>
                                             @if($invoice->payment_method)
                                                 <p class="text-xs text-gray-400">{{ $invoice->payment_method }}</p>
                                             @endif
@@ -605,6 +633,180 @@ function deleteInvoice(invoiceId) {
 
 function downloadInvoice(invoiceId) {
     window.open(`/admin/invoices/${invoiceId}/download`, '_blank');
+}
+
+// Bulk Actions Functions
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const invoiceCheckboxes = document.querySelectorAll('.invoice-checkbox');
+    
+    invoiceCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkedBoxes = document.querySelectorAll('.invoice-checkbox:checked');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCount = document.getElementById('selectedCount');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    if (checkedBoxes.length > 0) {
+        bulkActionsBar.classList.remove('hidden');
+        selectedCount.textContent = `${checkedBoxes.length} invoice${checkedBoxes.length > 1 ? 's' : ''} selected`;
+    } else {
+        bulkActionsBar.classList.add('hidden');
+    }
+    
+    // Update select all checkbox state
+    const allCheckboxes = document.querySelectorAll('.invoice-checkbox');
+    selectAllCheckbox.checked = checkedBoxes.length === allCheckboxes.length;
+    selectAllCheckbox.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < allCheckboxes.length;
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.invoice-checkbox, #selectAll');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateBulkActions();
+}
+
+function executeBulkAction() {
+    const selectedAction = document.getElementById('bulkActionSelect').value;
+    const checkedBoxes = document.querySelectorAll('.invoice-checkbox:checked');
+    
+    if (!selectedAction) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Action Selected',
+            text: 'Please select an action to perform.',
+        });
+        return;
+    }
+    
+    if (checkedBoxes.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Invoices Selected',
+            text: 'Please select at least one invoice.',
+        });
+        return;
+    }
+    
+    const invoiceIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+    
+    // Confirmation messages based on action
+    let confirmationConfig = {};
+    
+    switch(selectedAction) {
+        case 'mark_paid':
+            confirmationConfig = {
+                title: 'Mark as Paid',
+                text: `Are you sure you want to mark ${invoiceIds.length} invoice(s) as paid?`,
+                icon: 'question',
+                confirmButtonText: 'Yes, mark as paid',
+                confirmButtonColor: '#10b981'
+            };
+            break;
+        case 'cancel':
+            confirmationConfig = {
+                title: 'Cancel Invoices',
+                text: `Are you sure you want to cancel ${invoiceIds.length} invoice(s)?`,
+                icon: 'warning',
+                confirmButtonText: 'Yes, cancel them',
+                confirmButtonColor: '#f59e0b'
+            };
+            break;
+        case 'delete':
+            confirmationConfig = {
+                title: 'Delete Invoices',
+                text: `Are you sure you want to delete ${invoiceIds.length} invoice(s)? This action cannot be undone.`,
+                icon: 'error',
+                confirmButtonText: 'Yes, delete them',
+                confirmButtonColor: '#ef4444'
+            };
+            break;
+    }
+    
+    Swal.fire({
+        title: confirmationConfig.title,
+        text: confirmationConfig.text,
+        icon: confirmationConfig.icon,
+        showCancelButton: true,
+        confirmButtonColor: confirmationConfig.confirmButtonColor,
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: confirmationConfig.confirmButtonText,
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            performBulkAction(selectedAction, invoiceIds);
+        }
+    });
+}
+
+function performBulkAction(action, invoiceIds) {
+    // Show loading
+    Swal.fire({
+        title: 'Processing...',
+        text: 'Please wait while we process your request.',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Prepare form data
+            const formData = new FormData();
+            formData.append('action', action);
+            formData.append('_token', '{{ csrf_token() }}');
+            
+            invoiceIds.forEach(id => {
+                formData.append('invoice_ids[]', id);
+            });
+            
+            // Send AJAX request
+            fetch('{{ route("admin.invoices.bulk-action") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                // Reload page to reflect changes
+                window.location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: data.message || 'An error occurred while processing your request.'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.close();
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'An error occurred while processing your request.'
+        });
+    });
 }
 
 // Handle form submission

@@ -17,6 +17,8 @@
 - **JavaScript**: Livewire 3 + Alpine.js
 - **Build Tool**: Vite
 - **Icons**: Heroicons (via DaisyUI)
+- **Interactive Components**: Livewire Components (ProductShowcase, CheckoutConfigure, CheckoutSummary, SubscriptionManager, DomainSelector)
+- **State Management**: Session-based dengan database persistence
 
 ### Development Environment
 - **Server**: XAMPP (Apache + MySQL + PHP)
@@ -128,7 +130,7 @@
 
 ## Database Schema
 
-### Core Tables (10 Tables)
+### Core Tables (12 Tables)
 **User Management:**
 - users (authentication, roles, profile)
 - password_resets
@@ -139,11 +141,13 @@
 - product_addons (upselling options)
 - templates (product templates)
 - orders (purchase tracking)
-- invoices (billing management)
+- invoices (billing management dengan fee fields)
 - payments (Tripay integration)
+- carts (database-driven shopping cart)
+- cart_addons (cart addon relationships)
 
 **Project & Support:**
-- projects (client work, website access)
+- projects (client work, website access, domain management)
 - support_tickets (customer service)
 - ticket_replies (communication tracking)
 
@@ -156,6 +160,23 @@
   - `admin_username`
   - `admin_password`
   - `additional_access` (JSON field)
+
+**2025-10-27: Cart System Implementation**
+- Created `carts` table dengan comprehensive cart management:
+  - Session dan user-based cart tracking
+  - Template dan subscription plan configuration
+  - JSON fields untuk template_config dan domain_data
+  - Amount calculations (template, addons, domain, fees, total)
+  - Cart expiration management
+- Created `cart_addons` table untuk addon relationships:
+  - Cart-addon linking dengan price snapshot
+  - Unique constraint untuk duplicate prevention
+
+**2025-10-26: Invoice Enhancement**
+- Added fee calculation fields ke invoices table:
+  - `fee_merchant` (decimal)
+  - `fee_customer` (decimal)
+  - `total_fee` (decimal)
 
 ### Migration Status
 - All core tables created dan up-to-date
@@ -231,7 +252,11 @@
 - Vite untuk fast asset bundling
 - CSS/JS minification
 - Lazy loading untuk images
-- Component-based architecture
+- Component-based architecture dengan Livewire 3
+- Real-time reactive components dengan minimal JavaScript
+- Server-side rendering dengan client-side interactivity
+- Event-driven communication antar components
+- Session state management dengan database persistence
 
 ### Caching Strategy
 - Route caching
@@ -245,8 +270,18 @@
 ### Debugging & Testing
 - Laravel Debugbar untuk development
 - Laravel Telescope (planned)
-- PHPUnit untuk testing
+- PHPUnit untuk testing dengan comprehensive test coverage:
+  - CheckoutEndToEndTest (cart system validation)
+  - ProjectManagementTest (project lifecycle)
+  - SubscriptionTest (subscription management)
 - Browser testing dengan Dusk (planned)
+
+### Business Logic Services
+- **CartService**: Comprehensive cart management dengan session/database persistence
+- **TripayService**: Payment processing dengan fee calculation
+- **DomainService**: Domain availability checking
+- **ProjectService**: Project lifecycle management
+- **NotificationService**: System notifications
 
 ### Code Quality
 - PHP CS Fixer untuk code formatting
@@ -262,9 +297,11 @@
 ## Third-Party Integrations
 
 ### Payment Gateway
-- **Tripay**: Primary payment processor
+- **Tripay**: Primary payment processor dengan comprehensive integration
 - **Supported Methods**: Bank transfer, e-wallet, virtual account
-- **Features**: Real-time callback, fee calculation, multi-channel
+- **Features**: Real-time callback, fee calculation (merchant & customer), multi-channel
+- **Cart Integration**: Database-driven cart dengan Tripay fee calculation
+- **Checkout Flow**: Multi-step checkout dengan payment channel selection
 
 ### Email Services
 - **SMTP Configuration**: Gmail/custom SMTP
@@ -285,10 +322,13 @@
 - Performance monitoring
 
 ### Payment Logging
-- Transaction logging
-- Callback logging
-- Error tracking
-- Audit trail
+- Transaction logging dengan comprehensive tracking
+- Callback logging dengan signature validation
+- Error tracking untuk payment failures
+- Audit trail untuk transaction history
+- Cart activity logging
+- Checkout flow monitoring
+- Fee calculation tracking
 
 ### Security Logging
 - Authentication attempts

@@ -92,17 +92,38 @@ class TripayService
     public function createTransaction($data)
     {
         try {
+            Log::info('TripayService createTransaction called', ['data' => $data]);
+            
             // Generate signature
             $signature = $this->generateSignature($data);
             $data['signature'] = $signature;
+            
+            Log::info('TripayService signature generated', ['signature' => $signature]);
+
+            Log::info('TripayService making API request', [
+                'url' => $this->baseUrl . '/transaction/create',
+                'headers' => [
+                    'Authorization' => 'Bearer ' . substr($this->apiKey, 0, 10) . '...',
+                    'Content-Type' => 'application/json',
+                ]
+            ]);
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ])->post($this->baseUrl . '/transaction/create', $data);
 
+            Log::info('TripayService API response received', [
+                'status' => $response->status(),
+                'successful' => $response->successful()
+            ]);
+
             if ($response->successful()) {
-                return $response->json();
+                $responseData = $response->json();
+                Log::info('TripayService transaction created successfully', [
+                    'response_data' => $responseData
+                ]);
+                return $responseData;
             }
 
             Log::error('Tripay createTransaction failed', [

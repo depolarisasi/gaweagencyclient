@@ -147,6 +147,29 @@
                                         <span class="text-gray-600">Tax (PPN 11%):</span>
                                         <span class="font-medium">Rp {{ number_format($invoice->tax_amount, 0, ',', '.') }}</span>
                                     </div>
+                                    
+                                    <!-- Tripay Fee Information -->
+                                    @if($invoice->fee_merchant && $invoice->fee_merchant > 0)
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-gray-600">Biaya Admin (Merchant):</span>
+                                            <span class="font-medium">Rp {{ number_format($invoice->fee_merchant, 0, ',', '.') }}</span>
+                                        </div>
+                                    @endif
+                                    
+                                    @if($invoice->fee_customer && $invoice->fee_customer > 0)
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-gray-600">Biaya Admin (Customer):</span>
+                                            <span class="font-medium">Rp {{ number_format($invoice->fee_customer, 0, ',', '.') }}</span>
+                                        </div>
+                                    @endif
+                                    
+                                    @if($invoice->total_fee && $invoice->total_fee > 0)
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-orange-600 font-medium">Total Biaya Admin:</span>
+                                            <span class="font-medium text-orange-600">Rp {{ number_format($invoice->total_fee, 0, ',', '.') }}</span>
+                                        </div>
+                                    @endif
+                                    
                                     <div class="border-t pt-2">
                                         <div class="flex justify-between">
                                             <span class="text-lg font-bold text-gray-800">Total:</span>
@@ -194,7 +217,7 @@
                                 <div>
                                     <h4 class="font-bold">Payment Received</h4>
                                     <div class="text-sm">
-                                        Paid on: {{ $invoice->paid_at ? $invoice->paid_at->format('d M Y H:i') : 'N/A' }}
+                                        Paid on: {{ $invoice->paid_date ? $invoice->paid_date->format('d M Y H:i') : 'N/A' }}
                                     </div>
                                 </div>
                             </div>

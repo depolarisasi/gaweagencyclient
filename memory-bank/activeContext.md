@@ -1,14 +1,16 @@
 # Active Context
 
 ## Current Focus
-Aplikasi GaweClient telah mencapai tahap development yang sangat matang dengan sistem yang komprehensif dan terintegrasi.
+Aplikasi GaweClient telah mencapai tahap development yang sangat matang dengan sistem yang komprehensif dan terintegrasi. Sistem cart dan checkout flow telah diimplementasi dengan sempurna menggunakan database-driven approach.
 
 ## Recent Changes (Latest Scan - January 2025)
-- Sistem database yang lengkap dengan 9 model utama dan relationships yang solid
-- Implementasi payment gateway Tripay yang fully functional
-- Struktur controller yang terorganisir dengan role-based access
-- Livewire components untuk interaktivitas frontend
-- Migration terbaru untuk domain field di projects table
+- **Cart System Implementation**: Database-driven cart dengan model Cart dan CartAddon
+- **Advanced Checkout Flow**: Multi-step checkout dengan session dan cookie fallback
+- **Livewire Components**: ProductShowcase, CheckoutConfigure, CheckoutSummary, SubscriptionManager, DomainSelector
+- **CartService**: Comprehensive service untuk cart management dengan migration capabilities
+- **Enhanced Testing**: Comprehensive test coverage untuk checkout flow dan subscription management
+- **Domain Management**: Advanced domain selection dan validation system
+- **Payment Integration**: Fully functional Tripay integration dengan fee calculation
 
 ## Current State Analysis
 
@@ -18,12 +20,14 @@ Aplikasi GaweClient telah mencapai tahap development yang sangat matang dengan s
 - Product (dengan pricing dan billing cycles)
 - Project (dengan status tracking dan website access)
 - Order (dengan payment integration)
-- Invoice (dengan payment status)
+- Invoice (dengan payment status dan fee fields)
 - SupportTicket (dengan priority dan assignment)
 - Template (dengan categorization)
 - TicketReply (dengan internal/public replies)
 - ProductAddon (dengan pricing tiers)
 - Payment (dengan Tripay integration)
+- **Cart** (database-driven shopping cart dengan expiration)
+- **CartAddon** (cart addon relationships dengan pricing snapshot)
 
 **Key Relationships:**
 - User → Orders → Invoices → Payments (payment flow)
@@ -32,14 +36,33 @@ Aplikasi GaweClient telah mencapai tahap development yang sangat matang dengan s
 - SupportTicket → TicketReply (ticket management)
 - Product → ProductAddon (upselling system)
 
+### Livewire Components (Fully Implemented)
+**Frontend Components:**
+- **ProductShowcase**: Template dan product display dengan selection
+- **CheckoutConfigure**: Subscription plan dan billing cycle configuration
+- **CheckoutSummary**: Final checkout summary dengan payment channel selection
+- **SubscriptionManager**: User subscription management dengan upgrade/renewal
+- **DomainSelector**: Domain availability checking dan selection
+- **CheckoutSummaryComponent**: Comprehensive checkout summary calculations
+
 ### Payment Integration (Fully Functional)
 **TripayService Features:**
 - Payment channel management
 - Transaction creation & tracking
-- Fee calculation
+- Fee calculation (merchant & customer fees)
 - Callback handling dengan signature validation
 - Sandbox/production mode support
 - Comprehensive error logging
+
+### Cart System (Database-Driven)
+**CartService Features:**
+- Session dan user-based cart management
+- Migration dari session/cookies ke database
+- Cart expiration management (7 days)
+- Comprehensive cart summary calculations
+- Addon synchronization dengan pricing snapshot
+- Fallback mechanism untuk session issues
+- Complete cart validation untuk checkout
 
 **Payment Flow:**
 1. Checkout process dengan template selection

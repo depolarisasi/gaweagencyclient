@@ -5,32 +5,90 @@ Laravel 12 application dengan comprehensive role-based access control untuk agen
 
 ## Key Design Patterns
 
-### 1. Role-Based Access Control (RBAC)
+### 1. Cart Management Pattern
 **Implementation:**
-- User roles: admin, client, staff
-- Middleware untuk proteksi route berdasarkan role
-- Role-specific dashboards dengan functionality yang berbeda
-- Granular permissions untuk setiap action
+- Database-driven cart dengan session fallback
+- Cart expiration management (7 days)
+- Addon synchronization dengan pricing snapshot
+- Migration pattern dari session/cookies ke database
 
-**Pattern Usage:**
+**Usage:**
 ```php
-// Middleware protection
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    // Admin-only routes
-});
+// Get or create cart
+$cart = $this->cartService->getOrCreateCart($request);
 
-// Role-specific controllers
-Admin\DashboardController
-Client\DashboardController  
-Staff\DashboardController
+// Update cart with template
+$this->cartService->updateTemplate($cart, $templateId);
+
+// Sync addons dengan pricing snapshot
+$this->cartService->syncAddons($cart, $selectedAddons);
+
+// Get comprehensive cart summary
+$summary = $this->cartService->getCartSummary($cart);
 ```
 
-### 2. Service Layer Pattern
-**TripayService Implementation:**
-- Centralized payment gateway logic
-- API integration dengan error handling
-- Transaction management dan callback processing
-- Environment-based configuration (sandbox/production)
+### 2. Role-Based Access Control (RBAC)
+**Implementation:**
+- Spatie Laravel Permission package
+- Role hierarchy: Admin > Staff > Client
+- Granular permissions untuk specific actions
+- Middleware-based route protection
+
+**Usage:**
+```php
+// Role assignment
+$user->assignRole('client');
+
+// Permission checking
+if ($user->can('manage-projects')) {
+    // Allow access
+}
+
+// Middleware protection
+Route::middleware(['role:admin'])->group(function () {
+    // Admin-only routes
+});
+```
+
+### 3. Service Layer Pattern
+**Implementation:**
+- Business logic separation dari controllers
+- Reusable service classes untuk complex operations
+- Dependency injection untuk service management
+- Transaction management untuk data consistency
+
+**Key Services:**
+- **TripayService**: Payment processing dengan fee calculation
+- **CartService**: Comprehensive cart management dengan persistence
+- **ProjectService**: Project lifecycle management
+- **NotificationService**: System notifications
+- **DomainService**: Domain availability checking
+
+**CartService Pattern:**
+```php
+class CartService
+{
+    public function getOrCreateCart(Request $request): Cart
+    {
+        // Session/user-based cart creation dengan fallback mechanism
+    }
+    
+    public function migrateFromSessionAndCookies(Request $request): Cart
+    {
+        // Migration pattern dari session/cookies ke database
+    }
+    
+    public function getCartSummary(Cart $cart): array
+    {
+        // Comprehensive calculations dengan fee breakdown
+    }
+    
+    public function syncAddons(Cart $cart, array $addonIds): void
+    {
+        // Addon synchronization dengan pricing snapshot
+    }
+}
+```
 
 **Benefits:**
 - Separation of concerns
@@ -39,11 +97,44 @@ Staff\DashboardController
 - Clean controller code
 
 ### 3. Livewire Component Pattern
-**Interactive Components:**
-- ProductShowcase (template selection)
-- CheckoutConfigure (product configuration)
-- CheckoutSummary (order processing)
-- InvoiceShow (payment interface)
+**Implementation:**
+- Real-time reactive components dengan comprehensive functionality
+- Server-side rendering dengan client-side interactivity
+- Event-driven communication antar components
+- Form handling dengan real-time validation
+- Session dan state management
+
+**Key Components:**
+- **ProductShowcase**: Template browsing dengan filtering dan selection
+- **CheckoutConfigure**: Subscription plan configuration dengan billing cycles
+- **CheckoutSummary**: Comprehensive checkout dengan payment channel selection
+- **SubscriptionManager**: Subscription lifecycle management dengan upgrade/renewal
+- **DomainSelector**: Real-time domain availability checking
+- **CheckoutSummaryComponent**: Advanced cart calculations dengan fee breakdown
+
+**Usage Pattern:**
+```php
+// Component dengan state management
+class CheckoutSummary extends Component
+{
+    public $cart;
+    public $paymentChannels;
+    public $selectedPaymentChannel;
+    
+    protected $listeners = ['cart-updated' => 'refreshCart'];
+    
+    public function mount()
+    {
+        $this->loadPaymentChannels();
+    }
+    
+    public function selectPaymentChannel($channelCode)
+    {
+        $this->selectedPaymentChannel = $channelCode;
+        $this->emit('payment-channel-selected', $channelCode);
+    }
+}
+```
 
 **Advantages:**
 - Real-time interactivity tanpa complex JavaScript

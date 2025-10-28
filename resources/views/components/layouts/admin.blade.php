@@ -45,7 +45,12 @@
                             
                             <a href="{{ route('admin.products.index') }}" class="flex items-center space-x-3 px-4 py-3 {{ request()->routeIs('admin.products') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }} rounded-lg transition-colors">
                                 <i class="fas fa-box w-5"></i>
-                                <span>Products</span>
+                                <span>Addons</span>
+                            </a>
+                            
+                            <a href="{{ route('admin.subscription-plans.index') }}" class="flex items-center space-x-3 px-4 py-3 {{ request()->routeIs('admin.subscription-plans.*') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }} rounded-lg transition-colors">
+                                <i class="fas fa-credit-card w-5"></i>
+                                <span>Subscription Plans</span>
                             </a>
                             
                             <a href="{{ route('admin.projects.index') }}" class="flex items-center space-x-3 px-4 py-3 {{ request()->routeIs('admin.projects.*') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }} rounded-lg transition-colors">

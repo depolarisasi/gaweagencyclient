@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\Product;
 use App\Models\Template;
+use App\Models\SubscriptionPlan;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -28,7 +29,7 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         $statuses = ['pending', 'active', 'suspended', 'cancelled', 'completed'];
-        $billingCycles = ['monthly', 'quarterly', 'semi_annually', 'annually'];
+        $billingCycles = ['monthly', '6_months', 'annually', '2_years', '3_years'];
         
         $amount = $this->faker->numberBetween(1000000, 10000000); // 1M to 10M IDR
         $setupFee = $this->faker->numberBetween(0, 500000); // 0 to 500K IDR
@@ -37,10 +38,22 @@ class OrderFactory extends Factory
             'order_number' => 'ORD-' . now()->format('Ymd') . '-' . $this->faker->unique()->randomNumber(5),
             'user_id' => User::factory(),
             'product_id' => Product::factory(),
+            'subscription_plan_id' => SubscriptionPlan::factory(),
+            'template_id' => Template::factory(),
+            'order_type' => 'subscription',
             'amount' => $amount,
+            'subscription_amount' => $amount * 0.8,
+            'addons_amount' => $amount * 0.2,
             'setup_fee' => $setupFee,
             'billing_cycle' => $this->faker->randomElement($billingCycles),
             'status' => $this->faker->randomElement($statuses),
+            'domain_name' => $this->faker->domainName(),
+            'domain_type' => $this->faker->randomElement(['existing', 'register_new']),
+            'domain_details' => json_encode([
+                'registrant_name' => $this->faker->name(),
+                'registrant_email' => $this->faker->email(),
+                'registrant_phone' => $this->faker->phoneNumber()
+            ]),
             'next_due_date' => $this->faker->optional()->dateTimeBetween('now', '+1 year'),
             'order_details' => [
                 'product_name' => $this->faker->words(3, true),

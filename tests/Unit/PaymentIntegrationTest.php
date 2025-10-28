@@ -109,6 +109,22 @@ class PaymentIntegrationTest extends TestCase
     /** @test */
     public function it_creates_payment_transaction_successfully()
     {
+        // Update invoice status to pending for payment creation
+        $this->invoice->update(['status' => 'pending']);
+        
+        $this->tripayServiceMock
+            ->shouldReceive('formatTransactionData')
+            ->once()
+            ->with(Mockery::type(Invoice::class), 'BRIVA', Mockery::type('array'))
+            ->andReturn([
+                'method' => 'BRIVA',
+                'merchant_ref' => 'TEST-REF-123',
+                'amount' => 555000,
+                'customer_name' => $this->user->name,
+                'customer_email' => $this->user->email,
+                'customer_phone' => $this->user->phone,
+            ]);
+            
         $this->tripayServiceMock
             ->shouldReceive('createTransaction')
             ->once()

@@ -14,12 +14,20 @@ class Order extends Model
         'order_number',
         'user_id',
         'product_id',
+        'subscription_plan_id',
+        'template_id',
+        'order_type',
         'amount',
+        'subscription_amount',
+        'addons_amount',
         'setup_fee',
         'billing_cycle',
         'status',
         'next_due_date',
         'order_details',
+        'domain_name',
+        'domain_type',
+        'domain_details',
         'notes',
         'activated_at',
         'suspended_at',
@@ -29,9 +37,12 @@ class Order extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'subscription_amount' => 'decimal:2',
+            'addons_amount' => 'decimal:2',
             'setup_fee' => 'decimal:2',
             'next_due_date' => 'date',
             'order_details' => 'array',
+            'domain_details' => 'array',
             'activated_at' => 'datetime',
             'suspended_at' => 'datetime',
         ];
@@ -48,6 +59,16 @@ class Order extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function subscriptionPlan()
+    {
+        return $this->belongsTo(SubscriptionPlan::class);
+    }
+
+    public function template()
+    {
+        return $this->belongsTo(Template::class);
+    }
+
     public function invoices()
     {
         return $this->hasMany(Invoice::class);
@@ -56,6 +77,18 @@ class Order extends Model
     public function projects()
     {
         return $this->hasMany(Project::class);
+    }
+
+    public function orderAddons()
+    {
+        return $this->hasMany(OrderAddon::class);
+    }
+
+    public function addons()
+    {
+        return $this->belongsToMany(ProductAddon::class, 'order_addons')
+                    ->withPivot(['price', 'billing_cycle', 'quantity', 'addon_details'])
+                    ->withTimestamps();
     }
 
     // Scopes
@@ -74,6 +107,16 @@ class Order extends Model
         return $query->where('status', $status);
     }
 
+    public function scopeSubscription($query)
+    {
+        return $query->where('order_type', 'subscription');
+    }
+
+    public function scopeAddon($query)
+    {
+        return $query->where('order_type', 'addon');
+    }
+
     // Helper methods
     public function getTotalAmountAttribute()
     {
@@ -88,6 +131,45 @@ class Order extends Model
     public function getFormattedTotalAmountAttribute()
     {
         return 'Rp ' . number_format($this->total_amount, 0, ',', '.');
+    }
+
+    public function getFormattedSubscriptionAmountAttribute()
+    {
+        return 'Rp ' . number_format($this->subscription_amount ?? 0, 0, ',', '.');
+    }
+
+    public function getFormattedAddonsAmountAttribute()
+    {
+        return 'Rp ' . number_format($this->addons_amount ?? 0, 0, ',', '.');
+    }
+
+    public function isSubscriptionOrder()
+    {
+        return $this->order_type === 'subscription';
+    }
+
+    public function isAddonOrder()
+    {
+        return $this->order_type === 'addon';
+    }
+
+    public function hasNewDomain()
+    {
+        return $this->domain_type === 'register_new';
+    }
+
+    public function hasExistingDomain()
+    {
+        return $this->domain_type === 'existing';
+    }
+
+    public function getDomainTypeLabelAttribute()
+    {
+        return match($this->domain_type) {
+            'existing' => 'Domain Existing',
+            'register_new' => 'Daftar Domain Baru',
+            default => 'Tidak Ada Domain',
+        };
     }
 
     public function isActive()
@@ -113,15 +195,26 @@ class Order extends Model
 
         $baseDate = $this->next_due_date ? Carbon::parse($this->next_due_date) : Carbon::parse($this->activated_at);
 
+        // For subscription orders, use subscription plan billing cycle
+        if ($this->isSubscriptionOrder() && $this->subscriptionPlan) {
+            return $baseDate->addMonths($this->subscriptionPlan->cycle_months);
+        }
+
+        // Fallback to order billing cycle
         switch ($this->billing_cycle) {
             case 'monthly':
                 return $baseDate->addMonth();
             case 'quarterly':
                 return $baseDate->addMonths(3);
             case 'semi_annually':
+            case '6_months':
                 return $baseDate->addMonths(6);
             case 'annually':
                 return $baseDate->addYear();
+            case '2_years':
+                return $baseDate->addYears(2);
+            case '3_years':
+                return $baseDate->addYears(3);
             default:
                 return null;
         }

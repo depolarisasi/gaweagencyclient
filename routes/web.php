@@ -17,13 +17,9 @@ use App\Http\Controllers\Client\SupportTicketController as ClientSupportTicketCo
 
 use App\Http\Controllers\PaymentController;
 
-Route::get('/checkout/configure', function () {
-    return view('checkout.configure-page');
-})->name('checkout.configure');
 
-Route::get('/checkout/summary', function () {
-    return view('checkout.summary-page');
-})->name('checkout.summary');
+
+// Removed duplicate checkout.summary route - now handled in checkout group
 Route::get('/invoice/{invoice}', App\Livewire\InvoiceShow::class)->name('invoice.show');
 Route::post('/payment/callback', [App\Http\Controllers\PaymentController::class, 'handleTripayCallback'])->name('payment.callback');
 
@@ -62,6 +58,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         'destroy' => 'admin.products.destroy'
     ]);
     Route::patch('/products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('admin.products.toggle-status');
+    Route::delete('/products/{product}/force-delete', [\App\Http\Controllers\Admin\ProductController::class, 'forceDestroy'])->name('admin.products.force-destroy');
     Route::post('/products/bulk-action', [\App\Http\Controllers\Admin\ProductController::class, 'bulkAction'])->name('admin.products.bulk-action');
     
     // User Management Routes
@@ -150,6 +147,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/templates-statistics', [AdminTemplateController::class, 'statistics'])->name('admin.templates.statistics');
     Route::get('/templates-search', [AdminTemplateController::class, 'search'])->name('admin.templates.search');
     
+    // Subscription Plan Management Routes
+    Route::resource('subscription-plans', \App\Http\Controllers\Admin\SubscriptionPlanController::class)->names([
+        'index' => 'admin.subscription-plans.index',
+        'create' => 'admin.subscription-plans.create',
+        'store' => 'admin.subscription-plans.store',
+        'show' => 'admin.subscription-plans.show',
+        'edit' => 'admin.subscription-plans.edit',
+        'update' => 'admin.subscription-plans.update',
+        'destroy' => 'admin.subscription-plans.destroy'
+    ]);
+    Route::post('/subscription-plans/{subscriptionPlan}/toggle-status', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'toggleStatus'])->name('admin.subscription-plans.toggle-status');
+    
     Route::get('/orders', [AdminDashboardController::class, 'orders'])->name('admin.orders');
     Route::get('/settings', [AdminDashboardController::class, 'settings'])->name('admin.settings');
 });
@@ -174,6 +183,7 @@ Route::middleware(['auth', 'role:client'])->prefix('client')->group(function () 
     Route::get('/invoices/{invoice}/payment', [PaymentController::class, 'showPayment'])->name('client.invoices.payment');
     Route::post('/invoices/{invoice}/payment', [PaymentController::class, 'createPayment'])->name('client.invoices.payment.create');
     Route::post('/invoices/{invoice}/pay', [PaymentController::class, 'createPayment'])->name('client.invoices.pay');
+    Route::get('/invoices/{invoice}/payment/instructions', [PaymentController::class, 'showPaymentInstructions'])->name('client.invoices.payment.instructions');
     Route::get('/invoices/{invoice}/payment/status', [PaymentController::class, 'checkPaymentStatus'])->name('client.invoices.payment.status');
     Route::get('/invoices/{invoice}', [ClientDashboardController::class, 'showInvoice'])->name('client.invoices.show');
     
@@ -210,10 +220,32 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 })->name('dashboard');
 
 Route::prefix('checkout')->name('checkout.')->group(function () {
+    // Step 1: Template Selection
     Route::get('/', [App\Http\Controllers\CheckoutController::class, 'index'])->name('index');
     Route::post('/step1', [App\Http\Controllers\CheckoutController::class, 'step1'])->name('step1');
-    Route::get('/step2', [App\Http\Controllers\CheckoutController::class, 'step2'])->name('step2');
-    Route::post('/step3', [App\Http\Controllers\CheckoutController::class, 'step3'])->name('step3');
-    Route::post('/submit', [App\Http\Controllers\CheckoutController::class, 'submit'])->name('submit');
+    
+    // Step 2: Configure - Billing cycle/subscription plan
+    Route::get('/configure/', [App\Http\Controllers\CheckoutController::class, 'configure'])->name('configure');
+    Route::post('/configure/', [App\Http\Controllers\CheckoutController::class, 'configure'])->name('configure.post');
+    
+    // Step 3: Addons - Product addon selection (optional)
+    Route::get('/addon/', [App\Http\Controllers\CheckoutController::class, 'addons'])->name('addon');
+    Route::post('/addon/', [App\Http\Controllers\CheckoutController::class, 'addons'])->name('addon.post');
+    
+    // Step 4: Personal Info - Domain and user data
+    Route::get('/personal-info', [App\Http\Controllers\CheckoutController::class, 'personalInfo'])->name('personal-info');
+    Route::post('/personal-info', [App\Http\Controllers\CheckoutController::class, 'personalInfo'])->name('personal-info.post');
+    
+    // Step 5: Summary - Order summary and payment method selection
+    Route::get('/summary', [App\Http\Controllers\CheckoutController::class, 'summary'])->name('summary');
+    Route::post('/summary', [App\Http\Controllers\CheckoutController::class, 'submit'])->name('submit');
+    
+    // Step 6: Billing - Payment information (VA/QR/payment guide)
+    Route::get('/billing', [App\Http\Controllers\CheckoutController::class, 'billing'])->name('billing');
+    
+    // Test route for creating Tripay data
+    Route::get('/test/create-tripay-data', [App\Http\Controllers\CheckoutController::class, 'createTestTripayData'])->name('test.tripay');
+    
+    // Step 7: Success
     Route::get('/success', [App\Http\Controllers\CheckoutController::class, 'success'])->name('success');
 });

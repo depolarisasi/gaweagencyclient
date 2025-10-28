@@ -2,7 +2,7 @@
 
 namespace App\Livewire;
 
-use App\Models\Product;
+use App\Models\SubscriptionPlan;
 use App\Models\Template;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
@@ -10,42 +10,48 @@ use Illuminate\Support\Facades\Session;
 class CheckoutConfigure extends Component
 {
     public $template;
-    public $products;
+    public $subscriptionPlans;
     public $selectedTemplateId;
-    public $selectedProductId;
-    public $addons = []; // Untuk add-on
+    public $selectedSubscriptionPlanId;
+    public $selectedBillingCycle;
 
     public function mount()
     {
-        $this->selectedTemplateId = Session::get('selected_template_id');
+        $this->selectedTemplateId = Session::get('checkout.template_id');
 
         if (!$this->selectedTemplateId) {
             return redirect('/'); // Kembali ke halaman utama jika tidak ada template yang dipilih
         }
 
         $this->template = Template::findOrFail($this->selectedTemplateId);
-        $this->products = Product::all(); // Asumsi semua produk adalah siklus penagihan
-
-        // Inisialisasi add-on jika ada
-        // $this->addons = Addon::all(); // Jika ada model Addon
+        $this->subscriptionPlans = SubscriptionPlan::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
     }
 
-    public function updatedSelectedProductId()
+    public function updatedSelectedSubscriptionPlanId()
     {
-        // Logika tambahan jika diperlukan saat produk (siklus penagihan) berubah
+        if ($this->selectedSubscriptionPlanId) {
+            $plan = SubscriptionPlan::find($this->selectedSubscriptionPlanId);
+            if ($plan) {
+                $this->selectedBillingCycle = $plan->billing_cycle;
+            }
+        }
     }
 
     public function configureProduct()
     {
-        // Simpan konfigurasi ke session atau Livewire state
-        Session::put('cart', [
-            'template_id' => $this->selectedTemplateId,
-            'product_id' => $this->selectedProductId,
-            'addons' => $this->addons, // Akan diisi nanti jika ada add-on
-            'created_at' => now()->timestamp,
-        ]);
+        if (!$this->selectedSubscriptionPlanId) {
+            $this->addError('selectedSubscriptionPlanId', 'Silakan pilih paket berlangganan terlebih dahulu.');
+            return;
+        }
 
-        return redirect()->route('checkout.summary'); // Arahkan ke halaman ringkasan checkout
+        // Simpan konfigurasi ke session
+        Session::put('checkout.subscription_plan_id', $this->selectedSubscriptionPlanId);
+        Session::put('checkout.billing_cycle', $this->selectedBillingCycle);
+        Session::put('checkout.template_id', $this->selectedTemplateId);
+
+        return redirect()->route('checkout.addons.show'); // Arahkan ke halaman add-ons
     }
 
     public function render()

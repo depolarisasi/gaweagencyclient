@@ -172,7 +172,8 @@ class ProductController extends Controller
         if ($hasOrders) {
             // Deactivate instead of delete
             $product->update(['is_active' => false]);
-            alert()->success('Success', 'Product deactivated (has related orders).');
+            $orderCount = $product->orders()->count();
+            alert()->warning('Product Deactivated', "Product cannot be deleted because it has {$orderCount} related order(s). The product has been deactivated instead. To permanently delete this product, you must first delete or reassign all related orders.");
             return redirect()->route('admin.products.index');
         }
 
@@ -182,6 +183,27 @@ class ProductController extends Controller
             alert()->success('Success', 'Product deleted successfully.');
         } else {
             alert()->error('Error', 'Failed to delete product.');
+        }
+
+        return redirect()->route('admin.products.index');
+    }
+
+    /**
+     * Force delete a product (including related orders)
+     */
+    public function forceDestroy(Product $product)
+    {
+        try {
+            // Delete related orders first
+            $orderCount = $product->orders()->count();
+            $product->orders()->delete();
+            
+            // Then delete the product
+            $product->delete();
+
+            alert()->success('Success', "Product and {$orderCount} related order(s) deleted successfully.");
+        } catch (\Exception $e) {
+            alert()->error('Error', 'Failed to delete product: ' . $e->getMessage());
         }
 
         return redirect()->route('admin.products.index');

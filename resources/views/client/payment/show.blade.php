@@ -72,9 +72,9 @@
                             </div>
 
                             <div class="mt-6">
-                                <button id="payButton" class="btn btn-success btn-lg btn-block" disabled>
+                                <button id="payButton" class="btn btn-disabled btn-lg btn-block" disabled>
                                     <i class="fas fa-lock mr-2"></i>
-                                    <span id="payButtonText">Select Payment Method</span>
+                                    <span id="payButtonText">Pilih Metode Pembayaran</span>
                                 </button>
                             </div>
                         @else
@@ -173,7 +173,27 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+.btn-disabled {
+    background-color: #e5e7eb !important;
+    color: #9ca3af !important;
+    border-color: #d1d5db !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    opacity: 0.6 !important;
+}
+
+.btn-disabled:hover {
+    background-color: #e5e7eb !important;
+    color: #9ca3af !important;
+    border-color: #d1d5db !important;
+}
+</style>
+@endpush
+
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script>
 let selectedMethod = null;
 
@@ -196,9 +216,24 @@ document.querySelectorAll('.payment-method-card').forEach(card => {
         // Enable pay button
         const payButton = document.getElementById('payButton');
         const payButtonText = document.getElementById('payButtonText');
+        
+        // Remove disabled state completely
         payButton.disabled = false;
+        payButton.removeAttribute('disabled');
+        
+        // Update classes
         payButton.classList.remove('btn-disabled');
-        payButtonText.textContent = `Pay with ${methodName}`;
+        payButton.classList.add('btn-success');
+        
+        // Update content
+        payButton.innerHTML = `
+            <i class="fas fa-credit-card mr-2"></i>
+            <span id="payButtonText">Bayar Sekarang dengan ${methodName}</span>
+        `;
+        
+        // Remove inline styles that prevent interaction
+        payButton.style.pointerEvents = 'auto';
+        payButton.style.cursor = 'pointer';
     });
 });
 
@@ -225,10 +260,10 @@ document.getElementById('payButton').addEventListener('click', function() {
         if (data.success) {
             // Handle successful payment creation
             if (data.data.checkout_url) {
-                // Redirect payment (OVO, DANA, ShopeePay)
-                window.location.href = data.data.checkout_url;
+                // Redirect payment (OVO, DANA, ShopeePay) - show countdown then redirect
+                showRedirectCountdown(data.data.checkout_url);
             } else {
-                // Direct payment (VA, QRIS, etc.)
+                // Direct payment (VA, QRIS, etc.) - show instructions in modal first
                 showPaymentInstructions(data.data);
             }
         } else {
@@ -245,45 +280,70 @@ function showPaymentInstructions(paymentData) {
     const content = document.getElementById('paymentContent');
     let html = '<div class="space-y-4">';
     
+    html += `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <div>
+                <h4 class="font-bold">Pembayaran Berhasil Dibuat</h4>
+                <p class="text-sm">Silakan lanjutkan pembayaran sesuai instruksi</p>
+            </div>
+        </div>
+    `;
+    
     if (paymentData.pay_code) {
         html += `
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i>
-                <div>
-                    <h4 class="font-bold">Payment Code Generated</h4>
-                    <p class="text-sm">Use this code to complete your payment</p>
-                </div>
-            </div>
             <div class="text-center">
-                <div class="text-sm text-gray-600 mb-2">Payment Code:</div>
+                <div class="text-sm text-gray-600 mb-2">Kode Pembayaran:</div>
                 <div class="text-2xl font-bold text-primary font-mono">${paymentData.pay_code}</div>
                 <button onclick="copyToClipboard('${paymentData.pay_code}')" class="btn btn-outline btn-sm mt-2">
-                    <i class="fas fa-copy mr-1"></i> Copy Code
+                    <i class="fas fa-copy mr-1"></i> Salin Kode
                 </button>
             </div>
         `;
     }
     
-    if (paymentData.qr_url) {
+    if (paymentData.qr_string) {
         html += `
             <div class="text-center">
                 <div class="text-sm text-gray-600 mb-2">Scan QR Code:</div>
-                <img src="${paymentData.qr_url}" alt="QR Code" class="mx-auto max-w-48">
+                <div class="bg-white p-4 rounded-lg inline-block">
+                    <div id="qrcode-${Date.now()}"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (paymentData.expired_time) {
+        html += `
+            <div class="alert alert-info">
+                <i class="fas fa-clock"></i>
+                <div class="text-sm">
+                    <p class="font-medium">Batas waktu pembayaran:</p>
+                    <p id="countdown">Menghitung...</p>
+                </div>
             </div>
         `;
     }
     
     html += `
-        <div class="alert alert-info">
-            <i class="fas fa-clock"></i>
-            <div class="text-sm">
-                <p class="font-medium">Payment expires in:</p>
-                <p id="countdown">Calculating...</p>
-            </div>
+        <div class="text-center space-y-2">
+            <button onclick="window.location.href='{{ route("client.invoices.payment.instructions", $invoice) }}'" class="btn btn-primary w-full">
+                <i class="fas fa-list mr-2"></i>
+                Lihat Instruksi Lengkap
+            </button>
         </div>
     </div>`;
     
     content.innerHTML = html;
+    
+    // Generate QR Code if qr_string exists
+    if (paymentData.qr_string) {
+        const qrId = content.querySelector('[id^="qrcode-"]').id;
+        const qr = qrcode(0, 'M');
+        qr.addData(paymentData.qr_string);
+        qr.make();
+        document.getElementById(qrId).innerHTML = qr.createImgTag(4, 8);
+    }
     
     // Show close button
     document.getElementById('closeModal').style.display = 'block';
@@ -295,6 +355,43 @@ function showPaymentInstructions(paymentData) {
     
     // Start payment status checking
     startPaymentStatusCheck();
+}
+
+function showRedirectCountdown(checkoutUrl) {
+    // Show modal
+    document.getElementById('paymentModal').classList.add('modal-open');
+    
+    const content = document.getElementById('paymentContent');
+    let countdown = 5;
+    
+    function updateCountdown() {
+        content.innerHTML = `
+            <div class="text-center space-y-4">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <h4 class="font-bold">Redirecting to Payment</h4>
+                        <p class="text-sm">You will be redirected to complete your payment</p>
+                    </div>
+                </div>
+                <div class="text-6xl font-bold text-primary">${countdown}</div>
+                <p class="text-gray-600">Redirecting in ${countdown} seconds...</p>
+                <button onclick="window.location.href='${checkoutUrl}'" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt mr-2"></i>
+                    Go to Payment Now
+                </button>
+            </div>
+        `;
+        
+        if (countdown <= 0) {
+            window.location.href = checkoutUrl;
+        } else {
+            countdown--;
+            setTimeout(updateCountdown, 1000);
+        }
+    }
+    
+    updateCountdown();
 }
 
 function showError(message) {

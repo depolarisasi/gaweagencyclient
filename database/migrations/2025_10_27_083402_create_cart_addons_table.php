@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('cart_addons', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('cart_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_addon_id')->constrained()->onDelete('cascade');
+            $table->decimal('price', 10, 2); // Store price at time of adding to cart
+            $table->timestamps();
+            
+            // Prevent duplicate addons in same cart
+            $table->unique(['cart_id', 'product_addon_id']);
+            
+            // Indexes
+            $table->index('cart_id');
+            $table->index('product_addon_id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('cart_addons');
+    }
+};

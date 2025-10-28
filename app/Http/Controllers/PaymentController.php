@@ -245,6 +245,27 @@ class PaymentController extends Controller
     }
 
     /**
+     * Show payment instructions page
+     */
+    public function showPaymentInstructions(Invoice $invoice)
+    {
+        // Check if invoice has payment data
+        if (!$invoice->tripay_reference || !$invoice->tripay_data) {
+            return redirect()->route('client.invoices.payment', $invoice)
+                ->with('error', 'Payment not found. Please select a payment method first.');
+        }
+
+        $tripayData = $invoice->tripay_data;
+        $paymentChannel = $tripayData['payment_method'] ?? null;
+
+        // Get payment channel details for instructions
+        $channels = $this->tripayService->getPaymentChannels();
+        $channelDetails = collect($channels['data'] ?? [])->firstWhere('code', $paymentChannel);
+
+        return view('client.payment.instructions', compact('invoice', 'tripayData', 'channelDetails'));
+    }
+
+    /**
      * Check payment status
      */
     public function checkPaymentStatus(Invoice $invoice)

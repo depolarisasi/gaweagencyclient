@@ -17,6 +17,9 @@ class Invoice extends Model
         'amount',
         'tax_amount',
         'total_amount',
+        'fee_merchant',
+        'fee_customer',
+        'total_fee',
         'status',
         'due_date',
         'paid_date',
@@ -24,6 +27,7 @@ class Invoice extends Model
         'description',
         'tripay_reference',
         'tripay_response',
+        'tripay_data',
     ];
 
     protected function casts(): array
@@ -32,9 +36,13 @@ class Invoice extends Model
             'amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
+            'fee_merchant' => 'decimal:2',
+            'fee_customer' => 'decimal:2',
+            'total_fee' => 'decimal:2',
             'due_date' => 'date',
             'paid_date' => 'date',
             'tripay_response' => 'array',
+            'tripay_data' => 'array',
         ];
     }
 

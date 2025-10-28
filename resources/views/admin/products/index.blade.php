@@ -118,13 +118,53 @@
                                         <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" class="d-inline-block delete-form">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-error" title="Delete">
-                                                <i class="fas fa-trash fs-4"></i>
-                                            </button>
-                                        </form>
+                                        
+                                        @php
+                                            $hasOrders = $product->orders()->exists();
+                                            $orderCount = $hasOrders ? $product->orders()->count() : 0;
+                                        @endphp
+                                        
+                                        @if($hasOrders)
+                                            <!-- Dropdown for products with orders -->
+                                            <div class="dropdown dropdown-end">
+                                                <label tabindex="0" class="btn btn-sm btn-error">
+                                                    <i class="fas fa-trash"></i>
+                                                    <i class="fas fa-chevron-down ml-1"></i>
+                                                </label>
+                                                <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-64">
+                                                    <li class="menu-title">
+                                                        <span class="text-warning">⚠️ Product has {{ $orderCount }} order(s)</span>
+                                                    </li>
+                                                    <li>
+                                                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" class="delete-form">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="text-orange-600">
+                                                                <i class="fas fa-pause mr-2"></i>Deactivate Only
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    <li>
+                                                        <form action="{{ route('admin.products.force-destroy', $product->id) }}" method="POST" class="force-delete-form">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="text-red-600">
+                                                                <i class="fas fa-exclamation-triangle mr-2"></i>Force Delete (+ Orders)
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        @else
+                                            <!-- Regular delete for products without orders -->
+                                            <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" class="d-inline-block delete-form">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-error" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -155,19 +195,46 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Regular delete confirmation
     const deleteForms = document.querySelectorAll('.delete-form');
     deleteForms.forEach(form => {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             Swal.fire({
                 title: 'Anda yakin?',
-                text: 'Data yang dihapus tidak dapat dikembalikan!',
+                text: 'Product akan dideaktivasi atau dihapus!',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, hapus!',
+                confirmButtonText: 'Ya, lanjutkan!',
                 cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
+    // Force delete confirmation
+    const forceDeleteForms = document.querySelectorAll('.force-delete-form');
+    forceDeleteForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'PERINGATAN!',
+                html: '<p class="text-red-600 font-bold">Ini akan menghapus PERMANEN:</p><ul class="text-left mt-2"><li>• Product ini</li><li>• SEMUA order yang terkait</li><li>• Data tidak dapat dikembalikan!</li></ul>',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, hapus PERMANEN!',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    confirmButton: 'btn-error',
+                    cancelButton: 'btn-ghost'
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();
