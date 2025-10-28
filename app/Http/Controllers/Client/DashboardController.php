@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\Project;
 use App\Models\Invoice;
 use App\Models\Product;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class DashboardController extends Controller
 {
@@ -105,5 +107,51 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         return view('client.profile', compact('user'));
+    }
+    
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+        
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+            'company_name' => 'nullable|string|max:255',
+        ]);
+        
+        $user->update($validated);
+        
+        if ($user) {
+            alert()->success('Success', 'Profile updated successfully.');
+        } else {
+            alert()->error('Error', 'Failed to update profile.');
+        }
+        
+        return redirect()->route('client.profile');
+    }
+    
+    public function updatePassword(Request $request)
+    {
+        $user = auth()->user();
+        
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+        
+        // Check if current password is correct
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        }
+        
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+        
+        alert()->success('Success', 'Password changed successfully.');
+        
+        return redirect()->route('client.profile');
     }
 }

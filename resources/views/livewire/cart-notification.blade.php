@@ -1,0 +1,17 @@
+<div>
+    <button wire:click="resumeCart" class="btn btn-ghost relative">
+        <i class="fas fa-shopping-cart mr-1"></i>Cart
+        
+        @if($hasAbandonedCart)
+            <!-- Red notification indicator -->
+            <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {{ $cartCount > 0 ? $cartCount : '!' }}
+            </div>
+        @elseif($cartCount > 0)
+            <!-- Regular cart count -->
+            <div class="absolute -top-2 -right-2 bg-primary text-primary-content text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {{ $cartCount }}
+            </div>
+        @endif
+    </button>
+</div>

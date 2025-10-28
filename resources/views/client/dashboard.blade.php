@@ -1,76 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.client')
 
 @section('title', 'Client Dashboard - Gawe Agency')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-    <div class="flex">
-        <!-- Sidebar -->
-        <div class="w-64 bg-white shadow-xl border-r border-gray-200">
-            <div class="p-6">
-                <div class="flex items-center space-x-3 mb-8">
-                    <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-user text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-800">Client Portal</h3>
-                        <p class="text-xs text-gray-500">Your Projects Hub</p>
-                    </div>
-                </div>
-                
-                <nav class="space-y-2">
-                    <a href="{{ route('client.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200">
-                        <i class="fas fa-home w-5"></i>
-                        <span class="font-medium">Dashboard</span>
-                    </a>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">My Services</p>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-project-diagram w-5"></i>
-                            <span>My Projects</span>
-                        </a>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-shopping-cart w-5"></i>
-                            <span>My Orders</span>
-                        </a>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-file-invoice w-5"></i>
-                            <span>Invoices & Billing</span>
-                        </a>
-                    </div>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Explore</p>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-store w-5"></i>
-                            <span>Browse Services</span>
-                        </a>
-                    </div>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Support</p>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-life-ring w-5"></i>
-                            <span>Get Help</span>
-                        </a>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-comments w-5"></i>
-                            <span>Support Tickets</span>
-                        </a>
-                    </div>
-                </nav>
-            </div>
-        </div>
-        
-        <!-- Main Content -->
-        <div class="flex-1 p-8">
             <!-- Header -->
             <div class="flex items-center justify-between mb-8">
                 <div>
@@ -284,7 +216,4 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 @endsection

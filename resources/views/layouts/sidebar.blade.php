@@ -40,6 +40,11 @@
                             <span>Projects</span>
                         </a>
                         
+                        <a href="{{ route('admin.orders.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
+                            <i class="fas fa-shopping-cart w-5"></i>
+                            <span>Orders</span>
+                        </a>
+                        
                         <a href="{{ route('admin.invoices.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
                             <i class="fas fa-file-invoice w-5"></i>
                             <span>Invoices</span>

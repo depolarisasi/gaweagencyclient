@@ -53,7 +53,7 @@ class CompleteUserFlowIntegrationTest extends TestCase
         ];
 
         $response = $this->post('/register', $clientData);
-        $response->assertRedirect('/client/dashboard');
+        $response->assertRedirect('/client/');
         
         $client = User::where('email', 'john@example.com')->first();
         $this->assertNotNull($client);
@@ -158,7 +158,7 @@ class CompleteUserFlowIntegrationTest extends TestCase
 
         // Step 9: Client views their dashboard
         $response = $this->actingAs($client)
-            ->get('/client/dashboard');
+            ->get('/client/');
         $response->assertStatus(200);
         $response->assertSee($project->project_name);
         $response->assertSee($invoice->invoice_number);
@@ -327,7 +327,7 @@ class CompleteUserFlowIntegrationTest extends TestCase
         $this->actingAs($this->admin);
 
         // Admin dashboard overview
-        $response = $this->get('/admin/dashboard');
+        $response = $this->get('/admin/');
         $response->assertStatus(200);
 
         // User management workflow
@@ -466,7 +466,7 @@ class CompleteUserFlowIntegrationTest extends TestCase
         $this->actingAs($this->staff);
 
         // Staff dashboard
-        $response = $this->get('/staff/dashboard');
+        $response = $this->get('/staff/');
         $response->assertStatus(200);
 
         // View assigned projects
@@ -539,7 +539,7 @@ class CompleteUserFlowIntegrationTest extends TestCase
         $response->assertStatus(403);
 
         // Test client accessing admin routes
-        $response = $this->get('/admin/dashboard');
+        $response = $this->get('/admin/');
         $response->assertStatus(403);
 
         $response = $this->get('/admin/users');

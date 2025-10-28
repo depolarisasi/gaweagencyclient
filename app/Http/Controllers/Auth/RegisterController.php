@@ -50,15 +50,18 @@ class RegisterController extends Controller
         // Auto-login the user and redirect to appropriate dashboard
         Auth::login($user);
         
+        // Set session flag for cart merging
+        session(['user_just_logged_in' => true]);
+        
         // Redirect based on user role
         switch ($user->role) {
             case 'admin':
-                return redirect('/admin/dashboard');
+                return redirect('/admin/');
             case 'staff':
-                return redirect('/staff/dashboard');
+                return redirect('/staff/');
             case 'client':
             default:
-                return redirect('/client/dashboard');
+                return redirect('/client/');
         }
     }
 }

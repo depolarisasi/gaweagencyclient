@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\SupportTicketController as AdminSupportTicketController;
 use App\Http\Controllers\Admin\TemplateController as AdminTemplateController;
@@ -46,7 +47,7 @@ Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name(
 
 // Protected routes with role middleware
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     // Product Management Routes (controller-based, mirroring Users patterns)
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->names([
         'index' => 'admin.products.index',
@@ -93,6 +94,22 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/invoices/{invoice}/download', [AdminInvoiceController::class, 'download'])->name('admin.invoices.download');
     Route::post('/invoices/bulk-action', [AdminInvoiceController::class, 'bulkAction'])->name('admin.invoices.bulk-action');
     Route::get('/invoices-statistics', [AdminInvoiceController::class, 'statistics'])->name('admin.invoices.statistics');
+    
+    // Order Management Routes
+    Route::resource('orders', AdminOrderController::class)->names([
+        'index' => 'admin.orders.index',
+        'create' => 'admin.orders.create',
+        'store' => 'admin.orders.store',
+        'show' => 'admin.orders.show',
+        'edit' => 'admin.orders.edit',
+        'update' => 'admin.orders.update',
+        'destroy' => 'admin.orders.destroy'
+    ]);
+    Route::post('/orders/{order}/activate', [AdminOrderController::class, 'activate'])->name('admin.orders.activate');
+    Route::post('/orders/{order}/suspend', [AdminOrderController::class, 'suspend'])->name('admin.orders.suspend');
+    Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('admin.orders.cancel');
+    Route::post('/orders/bulk-action', [AdminOrderController::class, 'bulkAction'])->name('admin.orders.bulk-action');
+    Route::get('/orders-statistics', [AdminOrderController::class, 'statistics'])->name('admin.orders.statistics');
     
     // Project Management Routes
     Route::resource('projects', AdminProjectController::class)->names([
@@ -159,12 +176,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     ]);
     Route::post('/subscription-plans/{subscriptionPlan}/toggle-status', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'toggleStatus'])->name('admin.subscription-plans.toggle-status');
     
-    Route::get('/orders', [AdminDashboardController::class, 'orders'])->name('admin.orders');
     Route::get('/settings', [AdminDashboardController::class, 'settings'])->name('admin.settings');
 });
 
 Route::middleware(['auth', 'role:staff'])->prefix('staff')->group(function () {
-    Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('staff.dashboard');
+    Route::get('/', [StaffDashboardController::class, 'index'])->name('staff.dashboard');
     Route::get('/projects', [StaffDashboardController::class, 'projects'])->name('staff.projects');
     Route::get('/support', [StaffDashboardController::class, 'support'])->name('staff.support');
     Route::get('/orders', [StaffDashboardController::class, 'orders'])->name('staff.orders');
@@ -172,7 +188,7 @@ Route::middleware(['auth', 'role:staff'])->prefix('staff')->group(function () {
 });
 
 Route::middleware(['auth', 'role:client'])->prefix('client')->group(function () {
-    Route::get('/dashboard', [ClientDashboardController::class, 'index'])->name('client.dashboard');
+    Route::get('/', [ClientDashboardController::class, 'index'])->name('client.dashboard');
     Route::get('/products', [ClientDashboardController::class, 'products'])->name('client.products');
     Route::get('/orders', [ClientDashboardController::class, 'orders'])->name('client.orders');
     Route::get('/projects', [ClientDashboardController::class, 'projects'])->name('client.projects.index');
@@ -202,6 +218,8 @@ Route::middleware(['auth', 'role:client'])->prefix('client')->group(function () 
     
     Route::get('/support', [ClientDashboardController::class, 'support'])->name('client.support');
     Route::get('/profile', [ClientDashboardController::class, 'profile'])->name('client.profile');
+    Route::put('/profile', [ClientDashboardController::class, 'updateProfile'])->name('client.profile.update');
+    Route::put('/password', [ClientDashboardController::class, 'updatePassword'])->name('client.password.update');
 });
 
 // Fallback dashboard route

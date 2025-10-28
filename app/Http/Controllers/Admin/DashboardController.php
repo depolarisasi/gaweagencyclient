@@ -39,8 +39,8 @@ class DashboardController extends Controller
     
     public function orders()
     {
-        $orders = Order::with(['user', 'product'])->latest()->paginate(15);
-        return view('admin.orders', compact('orders'));
+        // Redirect to the new OrderController index for full CRUD functionality
+        return redirect()->route('admin.orders.index');
     }
     
     public function invoices()

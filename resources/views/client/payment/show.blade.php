@@ -1,10 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.client')
 
 @section('title', 'Payment')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-    <div class="container mx-auto px-4 py-8">
+    <div class="p-8">
         <!-- Header -->
         <div class="mb-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -170,7 +169,6 @@
             <button id="closeModal" class="btn btn-outline" style="display: none;">Close</button>
         </div>
     </div>
-</div>
 @endsection
 
 @push('styles')

@@ -48,14 +48,17 @@ class LoginController extends Controller
             // Update last login timestamp
             $user->update(['last_login_at' => now()]);
 
+            // Set session flag for cart merging
+            session(['user_just_logged_in' => true]);
+
             // Redirect based on role
             switch ($user->role) {
                 case 'admin':
-                    return redirect()->intended('/admin/dashboard');
+                    return redirect()->intended('/admin/');
                 case 'staff':
-                    return redirect()->intended('/staff/dashboard');
+                    return redirect()->intended('/staff/');
                 case 'client':
-                    return redirect()->intended('/client/dashboard');
+                    return redirect()->intended('/client/');
                 default:
                     return redirect()->intended('/dashboard');
             }

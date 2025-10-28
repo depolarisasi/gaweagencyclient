@@ -46,7 +46,7 @@ class AuthenticationTest extends TestCase
 
         $user = User::where('email', 'john@example.com')->first();
         $this->assertTrue(Hash::check('password123', $user->password));
-        $response->assertRedirect('/client/dashboard');
+        $response->assertRedirect('/client/');
     }
 
     /** @test */
@@ -117,11 +117,11 @@ class AuthenticationTest extends TestCase
         
         // Check redirect based on role
         if ($user->role === 'admin') {
-            $response->assertRedirect('/admin/dashboard');
+            $response->assertRedirect('/admin/');
         } elseif ($user->role === 'staff') {
-            $response->assertRedirect('/staff/dashboard');
+            $response->assertRedirect('/staff/');
         } else {
-            $response->assertRedirect('/client/dashboard');
+            $response->assertRedirect('/client/');
         }
     }
 
@@ -248,7 +248,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticatedAs($admin);
-        $response->assertRedirect('/admin/dashboard');
+        $response->assertRedirect('/admin/');
     }
 
     /** @test */
@@ -267,7 +267,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticatedAs($staff);
-        $response->assertRedirect('/staff/dashboard');
+        $response->assertRedirect('/staff/');
     }
 
     /** @test */
@@ -286,7 +286,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticatedAs($client);
-        $response->assertRedirect('/client/dashboard');
+        $response->assertRedirect('/client/');
     }
 
     /** @test */
@@ -331,13 +331,13 @@ class AuthenticationTest extends TestCase
     /** @test */
     public function guest_user_cannot_access_protected_routes()
     {
-        $response = $this->get('/admin/dashboard');
+        $response = $this->get('/admin/');
         $response->assertRedirect('/login');
 
-        $response = $this->get('/staff/dashboard');
+        $response = $this->get('/staff/');
         $response->assertRedirect('/login');
 
-        $response = $this->get('/client/dashboard');
+        $response = $this->get('/client/');
         $response->assertRedirect('/login');
     }
 

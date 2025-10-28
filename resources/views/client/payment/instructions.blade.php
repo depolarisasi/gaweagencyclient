@@ -3,8 +3,7 @@
 @section('title', 'Payment Instructions')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto p-8">
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div class="flex items-center justify-between">
@@ -183,7 +182,6 @@
             </div>
         </div>
     </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script>

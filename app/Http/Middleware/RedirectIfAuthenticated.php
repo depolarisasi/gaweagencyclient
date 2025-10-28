@@ -25,11 +25,11 @@ class RedirectIfAuthenticated
                 // Redirect based on user role
                 switch ($user->role) {
                     case 'admin':
-                        return redirect('/admin/dashboard');
+                        return redirect('/admin/');
                     case 'staff':
-                        return redirect('/staff/dashboard');
+                        return redirect('/staff/');
                     case 'client':
-                        return redirect('/client/dashboard');
+                        return redirect('/client/');
                     default:
                         return redirect('/dashboard');
                 }

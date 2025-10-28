@@ -1,10 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.client')
 
 @section('title', 'My Projects')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-    <div class="container mx-auto px-4 py-8">
+    <div class="p-8">
         <!-- Header -->
         <div class="mb-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -203,5 +202,4 @@
             </div>
         @endif
     </div>
-</div>
 @endsection

@@ -28,9 +28,7 @@
             @guest
                 <!-- Guest Navigation: [cart][register][login] -->
                 <div class="flex items-center space-x-2">
-                    <a href="{{ route('checkout.index') }}" class="btn btn-ghost">
-                        <i class="fas fa-shopping-cart mr-1"></i>Cart
-                    </a>
+                    @livewire('cart-notification')
                     <a href="{{ route('register') }}" class="btn btn-ghost">
                         <i class="fas fa-user-plus mr-1"></i>Register
                     </a>
@@ -41,9 +39,7 @@
             @else
                 <!-- Authenticated Navigation: [cart][client area][user profile dropdown] -->
                 <div class="flex items-center space-x-2">
-                    <a href="{{ route('checkout.index') }}" class="btn btn-ghost">
-                        <i class="fas fa-shopping-cart mr-1"></i>Cart
-                    </a>
+                    @livewire('cart-notification')
                     
                     @if(auth()->user()->role === 'client')
                         <a href="{{ route('client.dashboard') }}" class="btn btn-ghost">
