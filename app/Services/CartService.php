@@ -291,7 +291,7 @@ class CartService
             'domain_data' => $cart->domain_data,
             'subscription_amount' => $subscriptionAmount,
             'addons_amount' => $cart->addons_amount,
-            'domain_amount' => $cart->domain_amount,
+            'domain_amount' => 0,
             'template_amount' => $cart->template_amount,
             'subtotal' => $cart->subtotal,
             'customer_fee' => $cart->customer_fee,

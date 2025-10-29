@@ -77,33 +77,5 @@ class DomainController extends Controller
         ]);
     }
 
-    /**
-     * Get domain price
-     */
-    public function getPrice(Request $request): JsonResponse
-    {
-        $request->validate([
-            'domain' => 'required|string|max:255'
-        ]);
-
-        $domain = strtolower(trim($request->domain));
-
-        if (!$this->domainService->validateDomain($domain)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Format domain tidak valid'
-            ], 400);
-        }
-
-        $price = $this->domainService->getDomainPrice($domain);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'domain' => $domain,
-                'price' => $price,
-                'formatted_price' => 'Rp ' . number_format($price, 0, ',', '.')
-            ]
-        ]);
-    }
+    // Harga domain tidak digunakan lagi karena sudah termasuk dalam subscription.
 }

@@ -36,8 +36,8 @@ class CheckoutSummaryComponent extends Component
     {
         $this->subscriptionAmount = $this->subscriptionPlan->price;
         $this->addonsAmount = $this->addons->sum('price');
-        $domainPrice = $this->domainInfo['price'] ?? 0;
-        $this->totalAmount = $this->subscriptionAmount + $this->addonsAmount + $domainPrice;
+        // Domain price is included in subscription; do not add domain price
+        $this->totalAmount = $this->subscriptionAmount + $this->addonsAmount;
     }
 
     public function loadPaymentChannels()
@@ -174,8 +174,6 @@ class CheckoutSummaryComponent extends Component
                 return $this->domainInfo['name'] ?? $this->domainInfo['domain_name'] ?? 'Domain baru';
             case 'existing':
                 return $this->domainInfo['existing'] ?? $this->domainInfo['domain_name'] ?? 'Domain existing';
-            case 'subdomain':
-                return ($this->domainInfo['subdomain'] ?? 'subdomain') . '.gaweagency.com';
             default:
                 return 'Domain tidak diketahui';
         }

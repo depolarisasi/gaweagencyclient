@@ -29,7 +29,6 @@ class DomainService
             return [
                 'available' => $isAvailable,
                 'domain' => $domain,
-                'price' => $this->getDomainPrice($domain),
                 'suggestions' => $isAvailable ? [] : $this->getDomainSuggestions($domain)
             ];
         } catch (\Exception $e) {
@@ -37,32 +36,10 @@ class DomainService
             return [
                 'available' => false,
                 'domain' => $domain,
-                'price' => 0,
                 'suggestions' => [],
                 'error' => 'Gagal mengecek ketersediaan domain'
             ];
         }
-    }
-
-    /**
-     * Get domain price based on TLD
-     */
-    public function getDomainPrice(string $domain): float
-    {
-        $tld = $this->extractTld($domain);
-        
-        $prices = [
-            'com' => 150000,
-            'net' => 160000,
-            'org' => 160000,
-            'id' => 200000,
-            'co.id' => 180000,
-            'biz.id' => 190000,
-            'web.id' => 190000,
-            'my.id' => 190000,
-        ];
-
-        return $prices[$tld] ?? 150000; // Default price
     }
 
     /**
@@ -80,7 +57,6 @@ class DomainService
             if ($suggestion !== $domain && $this->simulateDomainCheck($suggestion)) {
                 $suggestions[] = [
                     'domain' => $suggestion,
-                    'price' => $this->getDomainPrice($suggestion),
                     'available' => true
                 ];
             }
@@ -95,7 +71,6 @@ class DomainService
             if ($this->simulateDomainCheck($suggestion)) {
                 $suggestions[] = [
                     'domain' => $suggestion,
-                    'price' => $this->getDomainPrice($suggestion),
                     'available' => true
                 ];
             }
@@ -106,7 +81,6 @@ class DomainService
             if ($this->simulateDomainCheck($suggestion)) {
                 $suggestions[] = [
                     'domain' => $suggestion,
-                    'price' => $this->getDomainPrice($suggestion),
                     'available' => true
                 ];
             }
@@ -225,14 +199,14 @@ class DomainService
     public function getSupportedTlds(): array
     {
         return [
-            'com' => ['name' => '.com', 'price' => 150000, 'popular' => true],
-            'net' => ['name' => '.net', 'price' => 160000, 'popular' => true],
-            'org' => ['name' => '.org', 'price' => 160000, 'popular' => true],
-            'id' => ['name' => '.id', 'price' => 200000, 'popular' => true],
-            'co.id' => ['name' => '.co.id', 'price' => 180000, 'popular' => true],
-            'biz.id' => ['name' => '.biz.id', 'price' => 190000, 'popular' => false],
-            'web.id' => ['name' => '.web.id', 'price' => 190000, 'popular' => false],
-            'my.id' => ['name' => '.my.id', 'price' => 190000, 'popular' => false],
+            'com' => ['name' => '.com', 'popular' => true],
+            'net' => ['name' => '.net', 'popular' => true],
+            'org' => ['name' => '.org', 'popular' => true],
+            'id' => ['name' => '.id', 'popular' => true],
+            'co.id' => ['name' => '.co.id', 'popular' => true],
+            'biz.id' => ['name' => '.biz.id', 'popular' => false],
+            'web.id' => ['name' => '.web.id', 'popular' => false],
+            'my.id' => ['name' => '.my.id', 'popular' => false],
         ];
     }
 }

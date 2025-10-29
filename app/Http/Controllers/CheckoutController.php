@@ -169,7 +169,7 @@ class CheckoutController extends Controller
                 // For logged-in users, skip password validation
                 $request->validate([
                     'domain_name' => 'required|string|max:255',
-                    'domain_type' => 'required|in:new,existing,subdomain',
+                    'domain_type' => 'required|in:new,existing',
                 ]);
 
                 $customerInfo = [
@@ -188,7 +188,7 @@ class CheckoutController extends Controller
                     'phone' => 'required|string|max:20',
                     'password' => 'required|string|min:8|confirmed',
                     'domain_name' => 'required|string|max:255',
-                    'domain_type' => 'required|in:new,existing,subdomain',
+                    'domain_type' => 'required|in:new,existing',
                 ]);
 
                 $customerInfo = [
@@ -368,7 +368,6 @@ class CheckoutController extends Controller
             
             $subscriptionAmount = $order->subscription_amount;
             $addonsAmount = $order->addons_amount;
-            $domainPrice = $order->domain_amount ?? 0;
             $totalAmount = $order->total_amount;
         } else {
             // Get cart summary with all calculated totals
@@ -383,7 +382,6 @@ class CheckoutController extends Controller
             
             $subscriptionAmount = $summary['subscription_amount'];
             $addonsAmount = $summary['addons_amount'];
-            $domainPrice = $summary['domain_amount'];
             $totalAmount = $summary['total_amount'];
         }
         
@@ -416,7 +414,6 @@ class CheckoutController extends Controller
             'addons' => $addons,
             'subscriptionAmount' => $subscriptionAmount,
             'addonsAmount' => $addonsAmount,
-            'domainPrice' => $domainPrice,
             'totalAmount' => $totalAmount
         ]);
 
@@ -430,7 +427,6 @@ class CheckoutController extends Controller
             'addons',
             'subscriptionAmount',
             'addonsAmount',
-            'domainPrice',
             'totalAmount',
             'totalAmountWithFees',
             'order',
@@ -475,7 +471,6 @@ class CheckoutController extends Controller
         
         $subscriptionAmount = $summary['subscription_amount'];
         $addonsAmount = $summary['addons_amount'];
-        $domainPrice = $summary['domain_amount'];
         $totalAmount = $summary['total_amount'];
 
         try {
@@ -507,11 +502,6 @@ class CheckoutController extends Controller
                 case 'existing':
                     $domainName = $domainInfo['existing'] ?? $domainInfo['name'] ?? $domainInfo['domain_name'] ?? '';
                     $domainType = 'existing';
-                    break;
-                case 'subdomain':
-                    $subdomainName = $domainInfo['subdomain'] ?? $domainInfo['name'] ?? '';
-                    $domainName = $subdomainName ? $subdomainName . '.gaweagency.com' : '';
-                    $domainType = 'existing'; // Subdomain dianggap sebagai existing
                     break;
             }
 

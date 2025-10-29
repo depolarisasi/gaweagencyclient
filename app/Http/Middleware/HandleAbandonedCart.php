@@ -19,24 +19,22 @@ class HandleAbandonedCart
 
     public function handle(Request $request, Closure $next)
     {
-        // Only handle for authenticated users or checkout routes
-        if (Auth::check() || $request->routeIs('checkout.*')) {
-            try {
-                // Get or create cart for current session/user
-                $cart = $this->cartService->getOrCreateCart($request);
-                
-                // If user just logged in, merge any session cart with user cart
-                if (Auth::check() && $request->session()->has('just_logged_in')) {
-                    $this->mergeSessionCartWithUserCart($request, $cart);
-                    $request->session()->forget('just_logged_in');
-                }
-                
-                // Share cart data with views
-                view()->share('currentCart', $cart);
-                
-            } catch (\Exception $e) {
-                \Log::error('Error in HandleAbandonedCart middleware: ' . $e->getMessage());
+        // Handle cart for all web routes to ensure cart notification consistency
+        try {
+            // Get or create cart for current session/user
+            $cart = $this->cartService->getOrCreateCart($request);
+            
+            // If user just logged in, merge any session cart with user cart
+            if (Auth::check() && $request->session()->has('just_logged_in')) {
+                $this->mergeSessionCartWithUserCart($request, $cart);
+                $request->session()->forget('just_logged_in');
             }
+            
+            // Share cart data with views
+            view()->share('currentCart', $cart);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in HandleAbandonedCart middleware: ' . $e->getMessage());
         }
 
         return $next($request);

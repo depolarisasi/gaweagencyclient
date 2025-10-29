@@ -101,7 +101,8 @@ class Cart extends Model
     public function calculateTotals(): void
     {
         $this->addons_amount = $this->cartAddons->sum('price');
-        $this->subtotal = $this->template_amount + $this->addons_amount + $this->domain_amount;
+        // Domain price is included in subscription; exclude domain_amount from subtotal
+        $this->subtotal = $this->template_amount + $this->addons_amount;
         $this->customer_fee = $this->subtotal * 0.03; // 3% customer fee
         $this->total_amount = $this->subtotal + $this->customer_fee;
     }

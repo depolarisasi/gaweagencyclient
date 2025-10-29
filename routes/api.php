@@ -22,10 +22,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Domain API routes
 Route::prefix('domain')->group(function () {
-    Route::post('/check-availability', [DomainController::class, 'checkAvailability']);
-    Route::post('/suggestions', [DomainController::class, 'getSuggestions']);
-    Route::get('/supported-tlds', [DomainController::class, 'getSupportedTlds']);
-    Route::post('/price', [DomainController::class, 'getPrice']);
+Route::post('/check-availability', [DomainController::class, 'checkAvailability']);
+Route::post('/suggestions', [DomainController::class, 'getSuggestions']);
+Route::get('/supported-tlds', [DomainController::class, 'getSupportedTlds']);
 });
 
 // Payment API routes

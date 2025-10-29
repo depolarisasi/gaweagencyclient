@@ -384,10 +384,13 @@
                         @if(isset($domainInfo) && $domainInfo)
                             <div class="flex justify-between items-center py-2">
                                 <span class="text-gray-600">Domain: {{ $domainInfo['domain_name'] ?? 'N/A' }}</span>
-                                @if($domainInfo['domain_type'] === 'new' || $domainInfo['type'] === 'new')
-                                    <span class="font-semibold">Rp {{ number_format($domainPrice ?? 0, 0, ',', '.') }}</span>
+                                @php($type = $domainInfo['domain_type'] ?? $domainInfo['type'] ?? 'unknown')
+                                @if($type === 'new')
+                                    <span class="font-semibold text-green-600">Included</span>
+                                @elseif($type === 'existing')
+                                    <span class="font-semibold text-green-600">Domain Existing</span>
                                 @else
-                                    <span class="font-semibold text-green-600">{{ $domainInfo['domain_type'] === 'existing' ? 'Domain Existing' : 'Subdomain' }}</span>
+                                    <span class="font-semibold text-gray-500">-</span>
                                 @endif
                             </div>
                         @endif
@@ -418,12 +421,7 @@
                             </div>
                         @endif
                         
-                        @if(isset($domainPrice) && $domainPrice > 0)
-                            <div class="flex justify-between items-center py-1 text-sm text-gray-600">
-                                <span>Subtotal Domain</span>
-                                <span>Rp {{ number_format($domainPrice, 0, ',', '.') }}</span>
-                            </div>
-                        @endif
+                        
                         
                         <!-- Customer Fee Information (only show customer fees, not merchant fees) -->
                         @if(isset($tripayTransaction['fee_customer']) && $tripayTransaction['fee_customer'] > 0)

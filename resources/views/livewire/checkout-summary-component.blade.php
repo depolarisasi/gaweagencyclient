@@ -44,10 +44,13 @@
                 <p class="text-xs text-gray-500">{{ ucfirst($domainInfo['type'] ?? $domainInfo['domain_type'] ?? 'unknown') }}</p>
             </div>
             <div class="text-right">
-                @if(($domainInfo['type'] ?? $domainInfo['domain_type'] ?? '') === 'new')
-                    <p class="font-medium text-gray-900">Rp {{ number_format($domainInfo['price'] ?? 0, 0, ',', '.') }}</p>
+                @php($type = $domainInfo['type'] ?? $domainInfo['domain_type'] ?? '')
+                @if($type === 'new')
+                    <p class="text-sm font-medium text-green-700">Included</p>
+                @elseif($type === 'existing')
+                    <p class="text-sm text-gray-600">Domain Existing</p>
                 @else
-                    <p class="text-sm text-gray-600">Gratis</p>
+                    <p class="text-sm text-gray-600">-</p>
                 @endif
             </div>
         </div>

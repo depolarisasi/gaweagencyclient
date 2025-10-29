@@ -14,6 +14,8 @@ class CartNotification extends Component
     public $cartId = null;
 
     protected $cartService;
+    
+    protected $listeners = ['cartUpdated' => 'updateCartStatus'];
 
     public function boot(CartService $cartService)
     {
@@ -42,6 +44,8 @@ class CartNotification extends Component
                     $this->cartCount++;
                 }
                 $this->cartCount += $cart->cartAddons()->count();
+                
+
             }
         } catch (\Exception $e) {
             \Log::error('Error updating cart status: ' . $e->getMessage());
@@ -107,6 +111,11 @@ class CartNotification extends Component
 
         // Step 5: Summary - if all previous steps are complete, go to summary
         return 'checkout.summary';
+    }
+
+    public function refreshCart()
+    {
+        $this->updateCartStatus();
     }
 
     public function render()

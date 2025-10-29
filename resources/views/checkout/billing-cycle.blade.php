@@ -259,13 +259,12 @@
                         <h4 class="font-medium text-gray-900">Domain</h4>
                         @if($domainInfo['type'] === 'new')
                             <p class="text-sm text-gray-600">Domain Baru: {{ $domainInfo['name'] ?? '' }}</p>
+                            <p class="text-xs font-medium text-green-700">Included</p>
                         @elseif($domainInfo['type'] === 'existing')
                             <p class="text-sm text-gray-600">Domain Existing: {{ $domainInfo['existing'] ?? '' }}</p>
-                        @elseif($domainInfo['type'] === 'subdomain')
-                            <p class="text-sm text-gray-600">Subdomain: {{ $domainInfo['subdomain'] ?? '' }}.gaweagency.com</p>
-                        @endif
-                        @if(isset($domainInfo['price']) && $domainInfo['price'] > 0)
-                            <p class="text-sm font-medium text-gray-900">Rp {{ number_format($domainInfo['price'], 0, ',', '.') }}</p>
+                            <p class="text-xs text-gray-600">Pemilik akan mengarahkan nameserver</p>
+                        @else
+                            <p class="text-sm text-gray-600">-</p>
                         @endif
                     </div>
                     @endif
