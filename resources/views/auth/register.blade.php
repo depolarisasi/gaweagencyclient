@@ -3,9 +3,9 @@
 @section('title', 'Register - Gawe Agency')
 
 @section('content')
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 py-8">
-    <div class="w-full max-w-2xl p-4">
-        <div class="card bg-base-100 shadow-2xl border border-base-300">
+<div class="min-h-screen flex items-center justify-center bg-base-300 py-8">
+    <div class="w-full max-w-2xl">
+        <div class="card bg-base-100 shadow-md border border-base-200">
             <div class="card-body p-8">
                 <!-- Logo/Brand -->
                 <div class="text-center mb-8">

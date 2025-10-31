@@ -1,5 +1,5 @@
 <div>
-    <button wire:click="resumeCart" class="btn btn-ghost relative">
+    <button wire:click="resumeCart" class="btn btn-ghost btn-sm relative">
         <i class="fas fa-shopping-cart mr-1"></i>Cart
         
         @if($hasAbandonedCart)

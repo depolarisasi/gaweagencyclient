@@ -3,7 +3,7 @@
 @section('title', 'Login - Gawe Agency')
 
 @section('content')
-<div class="min-h-screen flex items-center justify-center ">
+<div class="min-h-screen bg-base-300 flex items-center justify-center ">
     <div class="w-full max-w-md p-4">
         <div class="card bg-base-100 shadow-sm border border-base-300">
             <div class="card-body p-8">

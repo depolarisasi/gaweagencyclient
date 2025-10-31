@@ -3,8 +3,8 @@
 Catatan: Setiap item di bawah ini memiliki format `[ ] FUNGSI` dan disusun per peran dan modul agar uji manual terstruktur dan menyeluruh.
 
 ## Umum (Public)
-[ ] Pengunjung dapat mengakses beranda
-[ ] Pengunjung dapat melihat detail template
+[X] Pengunjung dapat mengakses beranda
+[X] Pengunjung dapat melihat detail template
 [ ] Pengguna dapat membuka halaman invoice publik lewat tautan
 [ ] Sistem menerima callback pembayaran dari Tripay (verifikasi manual)
 
