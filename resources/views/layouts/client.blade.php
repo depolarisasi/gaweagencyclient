@@ -26,12 +26,12 @@
     @livewireStyles
     @stack('styles')
 </head>
-<body class="font-sans antialiased bg-gray-50">
+<body class="font-sans antialiased">
     <!-- Navigation Bar -->
     @include('components.client-navbar')
 
     <!-- Main Content -->
-    <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div class="min-h-screen bg-white">
         <div class="flex">
             <!-- Sidebar -->
             @include('components.client-sidebar')

@@ -1,6 +1,6 @@
 <div>
     <button wire:click="resumeCart" class="btn btn-ghost btn-sm relative">
-        <i class="fas fa-shopping-cart mr-1"></i>Cart
+        Cart
         
         @if($hasAbandonedCart)
             <!-- Red notification indicator -->

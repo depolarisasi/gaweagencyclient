@@ -20,31 +20,31 @@
             </div>
             
             <!-- Welcome Card -->
-            <div class="bg-gradient-to-r from-green-500 to-blue-600 rounded-xl p-6 text-white mb-8">
+            <div class="bg-white border border-gray-300 rounded-md p-6 text-gray-900">
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 class="text-xl font-semibold mb-2">Hello, {{ auth()->user()->name }}!</h2>
-                        <p class="text-green-100">
+                        <p>
                             @if(auth()->user()->company)
                                 Welcome back to your {{ auth()->user()->company }} project dashboard. 
                             @endif
                             Let's see how your projects are progressing.
                         </p>
                         <div class="mt-4">
-                            <button class="bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                            <button class="px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors">
                                 <i class="fas fa-rocket mr-2"></i>Start New Project
                             </button>
                         </div>
                     </div>
                     <div class="hidden md:block">
-                        <i class="fas fa-user-circle text-6xl text-green-200 opacity-50"></i>
+                        <i class="fas fa-user-circle text-6xl opacity-50"></i>
                     </div>
                 </div>
             </div>
             
             <!-- Statistics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-6">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Active Projects</p>
@@ -59,7 +59,7 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Completed Projects</p>
@@ -74,7 +74,7 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Pending Invoices</p>
@@ -89,7 +89,7 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Support Tickets</p>
@@ -108,7 +108,7 @@
             <!-- Main Content Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <!-- My Projects -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div class="lg:col-span-2 bg-white rounded-md shadow-sm border border-gray-300 p-6">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-semibold text-gray-900">My Projects</h3>
                         <a href="#" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</a>
@@ -171,7 +171,7 @@
                 </div>
                 
                 <!-- Quick Actions Sidebar -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                     <div class="space-y-3">
                         <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors border border-green-200">
