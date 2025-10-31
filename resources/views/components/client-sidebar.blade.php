@@ -1,5 +1,5 @@
 <!-- Client Sidebar Component -->
-<div class="w-64 bg-white shadow-xl border-r border-gray-200">
+<div class="w-64 bg-base-100 shadow-sm border-r">
     <div class="p-6">
         <div class="flex items-center space-x-3 mb-8">
             <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
@@ -18,9 +18,7 @@
                 <span class="font-medium">📊 Dashboard</span>
             </a>
             
-            <!-- My Services Section -->
-            <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">My Services</p>
+            <!-- My Services Section --> 
                 
                 <!-- My Projects -->
                 <a href="{{ route('client.projects.index') }}" 
@@ -41,20 +39,14 @@
                    class="flex items-center space-x-3 px-4 py-2 {{ request()->routeIs('client.invoices.*') ? 'bg-base-200 text-grey-600 border border-base-300' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }} rounded-lg transition-colors">
                      
                     <span>🧾 Invoices & Billing</span>
-                </a>
-            </div>
-            
-            <!-- Explore Section -->
-            <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Explore</p>
-                
+                </a> 
+             
                 <!-- Browse Services -->
                 <a href="{{ route('client.products') }}" 
                    class="flex items-center space-x-3 px-4 py-2 {{ request()->routeIs('client.products') ? 'bg-base-200 text-grey-600 border border-base-300' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }} rounded-lg transition-colors">
                    
                     <span>🛒 Browse Services</span>
-                </a>
-            </div>
+                </a> 
             
             <!-- Support Section -->
             <div class="pt-4">

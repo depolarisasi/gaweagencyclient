@@ -213,6 +213,8 @@ Route::middleware(['auth', 'role:client'])->prefix('client')->group(function () 
         'update' => 'client.tickets.update',
         'destroy' => 'client.tickets.destroy'
     ]);
+    // Dedicated reply page (form)
+    Route::get('/tickets/{ticket}/reply', [ClientSupportTicketController::class, 'replyForm'])->name('client.tickets.reply.form');
     Route::post('/tickets/{ticket}/reply', [ClientSupportTicketController::class, 'reply'])->name('client.tickets.reply');
     Route::post('/tickets/{ticket}/close', [ClientSupportTicketController::class, 'close'])->name('client.tickets.close');
     

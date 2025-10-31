@@ -6,8 +6,8 @@
             <!-- Header -->
             <div class="flex items-center justify-between mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Welcome Back!</h1>
-                    <p class="text-gray-600 mt-1">Track your projects and manage your services</p>
+                    <h1 class="text-3xl font-bold">Welcome Back!</h1>
+                    <p class="mt-1">Track your projects and manage your services</p>
                 </div>
                 <div class="flex space-x-3">
                     <button class="btn btn-outline btn-sm">
@@ -20,7 +20,7 @@
             </div>
             
             <!-- Welcome Card -->
-            <div class="bg-white border border-gray-300 rounded-md p-6 text-gray-900">
+            <div class="border bg-base-100 rounded-md p-6 ">
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 class="text-xl font-semibold mb-2">Hello, {{ auth()->user()->name }}!</h2>
@@ -44,11 +44,11 @@
             
             <!-- Statistics Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-6">
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
+                <div class="rounded-md shadow-sm border bg-base-100 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600 mb-1">Active Projects</p>
-                            <p class="text-3xl font-bold text-gray-900">{{ \App\Models\Project::where('user_id', auth()->id())->where('status', 'active')->count() }}</p>
+                            <p class="text-sm font-medium  mb-1">Active Projects</p>
+                            <p class="text-3xl font-bold ">{{ \App\Models\Project::where('user_id', auth()->id())->where('status', 'active')->count() }}</p>
                             <p class="text-sm text-blue-600 mt-1">
                                 <i class="fas fa-clock mr-1"></i>In progress
                             </p>
@@ -59,11 +59,11 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
+                <div class="rounded-md shadow-sm border bg-base-100 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600 mb-1">Completed Projects</p>
-                            <p class="text-3xl font-bold text-gray-900">{{ \App\Models\Project::where('user_id', auth()->id())->where('status', 'completed')->count() }}</p>
+                            <p class="text-sm font-medium  mb-1">Completed Projects</p>
+                            <p class="text-3xl font-bold ">{{ \App\Models\Project::where('user_id', auth()->id())->where('status', 'completed')->count() }}</p>
                             <p class="text-sm text-green-600 mt-1">
                                 <i class="fas fa-check-circle mr-1"></i>Delivered
                             </p>
@@ -74,11 +74,11 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
+                <div class="rounded-md shadow-sm border bg-base-100 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600 mb-1">Pending Invoices</p>
-                            <p class="text-3xl font-bold text-gray-900">{{ \App\Models\Invoice::where('user_id', auth()->id())->whereIn('status', ['sent', 'draft'])->count() }}</p>
+                            <p class="text-sm font-medium  mb-1">Pending Invoices</p>
+                            <p class="text-3xl font-bold ">{{ \App\Models\Invoice::where('user_id', auth()->id())->whereIn('status', ['sent', 'draft'])->count() }}</p>
                             <p class="text-sm text-orange-600 mt-1">
                                 <i class="fas fa-exclamation-triangle mr-1"></i>Needs payment
                             </p>
@@ -89,11 +89,11 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
+                <div class="rounded-md shadow-sm border bg-base-100 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600 mb-1">Support Tickets</p>
-                            <p class="text-3xl font-bold text-gray-900">{{ \App\Models\SupportTicket::where('user_id', auth()->id())->where('status', 'open')->count() }}</p>
+                            <p class="text-sm font-medium  mb-1">Support Tickets</p>
+                            <p class="text-3xl font-bold ">{{ \App\Models\SupportTicket::where('user_id', auth()->id())->where('status', 'open')->count() }}</p>
                             <p class="text-sm text-purple-600 mt-1">
                                 <i class="fas fa-headset mr-1"></i>Open tickets
                             </p>
@@ -108,9 +108,9 @@
             <!-- Main Content Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <!-- My Projects -->
-                <div class="lg:col-span-2 bg-white rounded-md shadow-sm border border-gray-300 p-6">
+                <div class="lg:col-span-2 rounded-md shadow-sm border bg-base-100 p-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900">My Projects</h3>
+                        <h3 class="text-lg font-semibold ">My Projects</h3>
                         <a href="#" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</a>
                     </div>
                     <div class="space-y-4">
@@ -123,7 +123,7 @@
                                             <i class="fas fa-globe text-blue-600"></i>
                                         </div>
                                         <div>
-                                            <h4 class="font-semibold text-gray-900">{{ $project->project_name ?? 'Website Project #' . $project->id }}</h4>
+                                            <h4 class="font-semibold ">{{ $project->project_name ?? 'Website Project #' . $project->id }}</h4>
                                             <p class="text-sm text-gray-500">Started {{ $project->created_at->diffForHumans() }}</p>
                                         </div>
                                     </div>
@@ -131,7 +131,7 @@
                                     <!-- Progress Bar -->
                                     <div class="mt-3">
                                         <div class="flex items-center justify-between text-sm mb-1">
-                                            <span class="text-gray-600">Progress</span>
+                                            <span class="">Progress</span>
                                             <span class="font-medium">{{ $project->progress_percentage ?? 0 }}%</span>
                                         </div>
                                         <div class="w-full bg-gray-200 rounded-full h-2">
@@ -159,9 +159,9 @@
                         </div>
                         @empty
                         <div class="text-center py-12">
-                            <i class="fas fa-project-diagram text-gray-300 text-4xl mb-4"></i>
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
-                            <p class="text-gray-500 mb-4">Start your first project with us!</p>
+                            <i class="fas fa-project-diagram text-4xl mb-4"></i>
+                            <h3 class="text-lg font-medium  mb-2">No projects yet</h3>
+                            <p class=" mb-4">Start your first project with us!</p>
                             <button class="btn btn-primary">
                                 <i class="fas fa-plus mr-2"></i>Create Project
                             </button>
@@ -171,45 +171,45 @@
                 </div>
                 
                 <!-- Quick Actions Sidebar -->
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <div class="rounded-md shadow-sm border bg-base-100 p-6">
+                    <h3 class="text-lg font-semibold  mb-4">Quick Actions</h3>
                     <div class="space-y-3">
                         <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors border border-green-200">
                             <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-plus text-green-600"></i>
                             </div>
-                            <span class="font-medium text-gray-700">New Project</span>
+                            <span class="font-medium">New Project</span>
                         </button>
                         
                         <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-blue-50 rounded-lg transition-colors">
                             <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-file-invoice text-blue-600"></i>
                             </div>
-                            <span class="font-medium text-gray-700">View Invoices</span>
+                            <span class="font-medium">View Invoices</span>
                         </button>
                         
                         <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-purple-50 rounded-lg transition-colors">
                             <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-headset text-purple-600"></i>
                             </div>
-                            <span class="font-medium text-gray-700">Get Support</span>
+                            <span class="font-medium">Get Support</span>
                         </button>
                         
                         <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-orange-50 rounded-lg transition-colors">
                             <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-download text-orange-600"></i>
                             </div>
-                            <span class="font-medium text-gray-700">Download Files</span>
+                            <span class="font-medium">Download Files</span>
                         </button>
                     </div>
                     
                     <!-- Support Card -->
-                    <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                    <div class="mt-6 p-4 bg-base-100">
                         <div class="flex items-center space-x-3 mb-3">
                             <i class="fas fa-life-ring text-blue-600"></i>
-                            <h4 class="font-medium text-gray-900">Need Help?</h4>
+                            <h4 class="font-medium ">Need Help?</h4>
                         </div>
-                        <p class="text-sm text-gray-600 mb-3">Our support team is here to help you 24/7</p>
+                        <p class="text-sm  mb-3">Our support team is here to help you 24/7</p>
                         <button class="btn btn-sm btn-primary w-full">
                             <i class="fas fa-comments mr-2"></i>Start Chat
                         </button>

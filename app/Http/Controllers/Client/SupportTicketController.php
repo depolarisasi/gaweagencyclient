@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
 use App\Models\TicketReply;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SupportTicketController extends Controller
@@ -58,23 +59,52 @@ class SupportTicketController extends Controller
     {
         $validated = $request->validate([
             'subject' => 'required|string|max:255',
-            'description' => 'required|string|max:2000',
+            'description' => 'required|string|max:5000',
             'priority' => 'required|in:high,medium,low',
             'category' => 'required|in:technical,billing,general,feature_request',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|mimes:pdf,png,jpg,jpeg,gif|max:10240',
         ]);
         
         // Generate unique ticket number
         $ticketNumber = $this->generateTicketNumber();
+
+        // Sanitize rich text input to allow limited safe tags
+        $sanitizedDescription = $this->sanitizeHtml($validated['description']);
         
         $ticket = SupportTicket::create([
             'ticket_number' => $ticketNumber,
             'user_id' => auth()->id(),
             'subject' => $validated['subject'],
-            'description' => $validated['description'],
+            'description' => $sanitizedDescription,
             'priority' => $validated['priority'],
             'category' => $validated['category'],
             'status' => 'open',
         ]);
+
+        // If attachments provided during creation, save them as an initial reply
+        $uploaded = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if (!$file) { continue; }
+                $path = $file->store('ticket_attachments/' . $ticket->id, 'public');
+                $uploaded[] = [
+                    'path' => $path,
+                    'name' => $file->getClientOriginalName(),
+                    'mime' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ];
+            }
+        }
+
+        if (!empty($uploaded)) {
+            $ticket->addReply(
+                $sanitizedDescription,
+                auth()->id(),
+                false,
+                $uploaded
+            );
+        }
         
         // TODO: Send notification to admin/staff
         
@@ -107,6 +137,21 @@ class SupportTicketController extends Controller
         }
         
         return view('client.tickets.show', compact('ticket'));
+    }
+
+    /**
+     * Show the form for replying to a ticket (client side).
+     */
+    public function replyForm(SupportTicket $ticket)
+    {
+        // Ensure user can only view their own tickets
+        if ($ticket->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized access to this ticket.');
+        }
+
+        // Load minimal relations for context
+        $ticket->load(['assignedUser']);
+        return view('client.tickets.reply', compact('ticket'));
     }
 
     /**
@@ -232,13 +277,32 @@ class SupportTicketController extends Controller
         }
         
         $request->validate([
-            'message' => 'required|string|max:2000'
+            'message' => 'required|string|max:5000',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|mimes:pdf,png,jpg,jpeg,gif|max:10240',
         ]);
-        
+
+        // Handle file uploads
+        $uploaded = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if (!$file) { continue; }
+                $path = $file->store('ticket_attachments/' . $ticket->id, 'public');
+                $uploaded[] = [
+                    'path' => $path,
+                    'name' => $file->getClientOriginalName(),
+                    'mime' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ];
+            }
+        }
+
+        $replyMessage = $this->sanitizeHtml($request->message);
         $reply = $ticket->addReply(
-            $request->message,
+            $replyMessage,
             auth()->id(),
-            false // Client replies are never internal
+            false, // Client replies are never internal
+            !empty($uploaded) ? $uploaded : null
         );
         
         // If ticket was resolved, reopen it
@@ -258,6 +322,16 @@ class SupportTicketController extends Controller
         
         return redirect()->route('client.tickets.show', $ticket)
                         ->with('success', 'Reply added successfully.');
+    }
+
+    /**
+     * Allow only safe HTML tags for rich text fields.
+     */
+    private function sanitizeHtml(string $content): string
+    {
+        $allowed = '<p><br><strong><em><u><ol><ul><li><a><span><blockquote><code><pre><table><thead><tbody><tr><th><td>';
+        $clean = strip_tags($content, $allowed);
+        return trim($clean);
     }
     
     /**

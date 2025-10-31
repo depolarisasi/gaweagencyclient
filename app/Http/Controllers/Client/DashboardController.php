@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\Product;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Cookie;
 
 class DashboardController extends Controller
 {
@@ -122,6 +123,14 @@ class DashboardController extends Controller
         ]);
         
         $user->update($validated);
+
+        // Handle theme preference (persist to cookie and session without DB change)
+        $theme = $request->input('theme');
+        if ($theme && in_array($theme, ['light', 'dark'])) {
+            session(['theme' => $theme]);
+            // Store for 1 year (minutes)
+            Cookie::queue('theme', $theme, 60 * 24 * 365);
+        }
         
         if ($user) {
             alert()->success('Success', 'Profile updated successfully.');

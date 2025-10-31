@@ -11,21 +11,26 @@ class SupportTicket extends Model
     use HasFactory;
 
     protected $fillable = [
+        'ticket_number',
         'user_id',
-        'subject',
-        'message',
-        'priority',
-        'department',
-        'status',
         'assigned_to',
-        'internal_notes',
+        'subject',
+        'description',
+        'priority',
+        'status',
+        'category',
+        'last_reply_at',
+        'last_reply_by',
         'resolved_at',
         'closed_at',
+        // Optional legacy/admin fields
+        'internal_notes',
     ];
 
     protected function casts(): array
     {
         return [
+            'last_reply_at' => 'datetime',
             'resolved_at' => 'datetime',
             'closed_at' => 'datetime',
         ];

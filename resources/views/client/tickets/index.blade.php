@@ -1,6 +1,6 @@
 @extends('layouts.client')
 
-@section('title', 'Support Tickets - Client')
+@section('title', 'Support Tickets')
 
 @section('content')
         <div class="p-8">
@@ -11,15 +11,15 @@
                     <p class="text-gray-600 mt-1">Get help from our support team</p>
                 </div>
                 <div class="flex space-x-3">
-                    <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
+                    <a href="{{ route('client.tickets.create') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus mr-2"></i>Create Ticket
-                    </button>
+                    </a>
                 </div>
             </div>
             
             <!-- Quick Stats -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">My Tickets</p>
@@ -31,7 +31,7 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Open Tickets</p>
@@ -43,7 +43,7 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Resolved</p>
@@ -57,7 +57,7 @@
             </div>
             
             <!-- Filters -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 mb-6">
                 <form method="GET" action="{{ route('client.tickets.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
@@ -100,7 +100,7 @@
             <!-- Tickets List -->
             <div class="space-y-4">
                 @forelse($tickets as $ticket)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
                             <div class="flex items-center space-x-3 mb-2">
@@ -179,25 +179,25 @@
                         </div>
                         
                         <div class="flex items-center space-x-2">
-                            <button onclick="viewTicket({{ $ticket->id }})" class="btn btn-sm btn-outline">
+                            <a href="{{ route('client.tickets.show', $ticket) }}" class="btn btn-sm btn-outline">
                                 <i class="fas fa-eye mr-2"></i>View
-                            </button>
+                            </a>
                             @if($ticket->status !== 'closed')
-                            <button onclick="replyTicket({{ $ticket->id }})" class="btn btn-sm btn-primary">
+                            <a href="{{ route('client.tickets.reply.form', $ticket) }}" class="btn btn-sm btn-primary">
                                 <i class="fas fa-reply mr-2"></i>Reply
-                            </button>
+                            </a>
                             @endif
                         </div>
                     </div>
                 </div>
                 @empty
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-12 text-center">
                     <i class="fas fa-ticket-alt text-gray-300 text-6xl mb-4"></i>
                     <h3 class="text-xl font-semibold text-gray-900 mb-2">No Support Tickets</h3>
                     <p class="text-gray-600 mb-6">You haven't created any support tickets yet. Need help? Create your first ticket!</p>
-                    <button onclick="openCreateModal()" class="btn btn-primary">
+                    <a href="{{ route('client.tickets.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus mr-2"></i>Create Your First Ticket
-                    </button>
+                    </a>
                 </div>
                 @endforelse
             </div>
@@ -208,177 +208,5 @@
             </div>
             @endif
         </div>
-    </div>
-</div>
 
-<!-- Create Ticket Modal -->
-<div id="ticketModal" class="modal">
-    <div class="modal-box w-11/12 max-w-2xl">
-        <h3 class="font-bold text-lg mb-4">Create Support Ticket</h3>
-        
-        <form id="ticketForm">
-            <div class="space-y-4">
-                <!-- Subject -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Subject *</span>
-                    </label>
-                    <input type="text" name="subject" class="input input-bordered" required placeholder="Brief description of your issue">
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Priority -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium">Priority *</span>
-                        </label>
-                        <select name="priority" class="select select-bordered" required>
-                            <option value="low">Low - General inquiry</option>
-                            <option value="medium" selected>Medium - Standard issue</option>
-                            <option value="high">High - Urgent issue</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Category -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium">Category *</span>
-                        </label>
-                        <select name="category" class="select select-bordered" required>
-                            <option value="general">General Support</option>
-                            <option value="technical">Technical Issue</option>
-                            <option value="billing">Billing Question</option>
-                            <option value="feature_request">Feature Request</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Description -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Description *</span>
-                    </label>
-                    <textarea name="description" class="textarea textarea-bordered" rows="5" required placeholder="Please provide detailed information about your issue or request..."></textarea>
-                    <label class="label">
-                        <span class="label-text-alt text-gray-500">The more details you provide, the faster we can help you!</span>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="modal-action">
-                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-paper-plane mr-2"></i>Submit Ticket
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Reply Modal -->
-<div id="replyModal" class="modal">
-    <div class="modal-box w-11/12 max-w-2xl">
-        <h3 class="font-bold text-lg mb-4">Reply to Ticket</h3>
-        
-        <form id="replyForm">
-            <input type="hidden" id="replyTicketId" name="ticket_id">
-            
-            <div class="form-control mb-4">
-                <label class="label">
-                    <span class="label-text font-medium">Your Reply *</span>
-                </label>
-                <textarea name="message" class="textarea textarea-bordered" rows="5" required placeholder="Type your reply here..."></textarea>
-            </div>
-            
-            <div class="modal-action">
-                <button type="button" class="btn" onclick="closeReplyModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-reply mr-2"></i>Send Reply
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-function openCreateModal() {
-    document.getElementById('ticketForm').reset();
-    document.getElementById('ticketModal').classList.add('modal-open');
-}
-
-function closeModal() {
-    document.getElementById('ticketModal').classList.remove('modal-open');
-}
-
-function viewTicket(ticketId) {
-    window.location.href = `/client/tickets/${ticketId}`;
-}
-
-function replyTicket(ticketId) {
-    document.getElementById('replyTicketId').value = ticketId;
-    document.getElementById('replyForm').reset();
-    document.getElementById('replyModal').classList.add('modal-open');
-}
-
-function closeReplyModal() {
-    document.getElementById('replyModal').classList.remove('modal-open');
-}
-
-// Handle ticket form submission
-document.getElementById('ticketForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    
-    fetch('/client/tickets', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            closeModal();
-            location.reload();
-        } else {
-            alert('Error creating ticket. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error creating ticket. Please try again.');
-    });
-});
-
-// Handle reply form submission
-document.getElementById('replyForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const ticketId = document.getElementById('replyTicketId').value;
-    
-    fetch(`/client/tickets/${ticketId}/reply`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            closeReplyModal();
-            location.reload();
-        } else {
-            alert('Error sending reply. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error sending reply. Please try again.');
-    });
-});
-</script>
 @endsection

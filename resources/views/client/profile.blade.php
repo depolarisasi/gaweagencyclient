@@ -20,7 +20,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Profile Information -->
             <div class="lg:col-span-2">
-                <div class="card bg-base-100 shadow-lg">
+                <div class="card border border-gray-300 rounded-md shadow-sm">
                     <div class="card-header bg-gray-50 px-6 py-4 border-b">
                         <h3 class="text-lg font-semibold text-gray-800">Profile Information</h3>
                     </div>
@@ -103,6 +103,27 @@
                                 @enderror
                             </div>
 
+                            <!-- Theme Preference -->
+                            @php($currentTheme = request()->cookie('theme') ?? session('theme') ?? 'light')
+                            <div class="form-control mt-6">
+                                <label class="label">
+                                    <span class="label-text font-medium text-gray-700">Theme</span>
+                                </label>
+                                <div class="flex items-center gap-6">
+                                    <label class="label cursor-pointer">
+                                        <input type="radio" name="theme" value="light" class="radio radio-primary" {{ $currentTheme === 'light' ? 'checked' : '' }}>
+                                        <span class="label-text ml-2">Light</span>
+                                    </label>
+                                    <label class="label cursor-pointer">
+                                        <input type="radio" name="theme" value="dark" class="radio radio-primary" {{ $currentTheme === 'dark' ? 'checked' : '' }}>
+                                        <span class="label-text ml-2">Dark</span>
+                                    </label>
+                                </div>
+                                <label class="label">
+                                    <span class="label-text-alt text-gray-500">Your theme preference will be saved to your device.</span>
+                                </label>
+                            </div>
+
                             <!-- Submit Button -->
                             <div class="mt-8">
                                 <button type="submit" class="btn btn-primary">
@@ -115,7 +136,7 @@
                 </div>
 
                 <!-- Change Password -->
-                <div class="card bg-base-100 shadow-lg mt-8">
+                <div class="card border border-gray-300 rounded-md shadow-sm mt-8">
                     <div class="card-header bg-gray-50 px-6 py-4 border-b">
                         <h3 class="text-lg font-semibold text-gray-800">Change Password</h3>
                     </div>
@@ -180,7 +201,7 @@
 
             <!-- Profile Summary -->
             <div class="lg:col-span-1">
-                <div class="card bg-base-100 shadow-lg">
+                <div class="card border border-gray-300 rounded-md shadow-sm">
                     <div class="card-header bg-gray-50 px-6 py-4 border-b">
                         <h3 class="text-lg font-semibold text-gray-800">Account Summary</h3>
                     </div>
