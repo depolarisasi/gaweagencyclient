@@ -57,8 +57,14 @@ class SupportTicketController extends Controller
         }
         
         $tickets = $query->orderBy('created_at', 'desc')->paginate(15);
-        
-        return view('admin.tickets.index', compact('tickets'));
+
+        // Preload staff list for filters and assignment (avoid querying in Blade)
+        $staff = User::where('role', 'staff')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('admin.tickets.index', compact('tickets', 'staff'));
     }
 
     /**
@@ -89,12 +95,15 @@ class SupportTicketController extends Controller
         // Generate unique ticket number
         $ticketNumber = $this->generateTicketNumber();
         
+        // Sanitize rich text description (align with client sanitization)
+        $sanitizedDescription = $this->sanitizeHtml($validated['description']);
+
         $ticket = SupportTicket::create([
             'ticket_number' => $ticketNumber,
             'user_id' => $validated['user_id'],
             'assigned_to' => $validated['assigned_to'],
             'subject' => $validated['subject'],
-            'description' => $validated['description'],
+            'description' => $sanitizedDescription,
             'priority' => $validated['priority'],
             'category' => $validated['category'],
             'status' => 'open',
@@ -153,7 +162,9 @@ class SupportTicketController extends Controller
             'category' => 'required|in:technical,billing,general,feature_request',
             'status' => 'required|in:open,in_progress,resolved,closed',
         ]);
-        
+        // Sanitize description before update
+        $validated['description'] = $this->sanitizeHtml($validated['description']);
+
         $ticket->update($validated);
         
         if ($request->expectsJson()) {
@@ -277,6 +288,29 @@ class SupportTicketController extends Controller
             'message' => 'Ticket closed successfully'
         ]);
     }
+
+    /**
+     * Reopen a closed ticket
+     */
+    public function reopen(SupportTicket $ticket)
+    {
+        if ($ticket->status !== 'closed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only closed tickets can be reopened'
+            ], 400);
+        }
+
+        $ticket->update([
+            'status' => 'open',
+            'closed_at' => null
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ticket reopened successfully'
+        ]);
+    }
     
     /**
      * Add reply to ticket
@@ -284,14 +318,17 @@ class SupportTicketController extends Controller
     public function reply(Request $request, SupportTicket $ticket)
     {
         $request->validate([
-            'message' => 'required|string|max:2000',
+            'message' => 'required|string|max:5000',
             'is_internal' => 'boolean'
         ]);
         
         $isInternal = $request->boolean('is_internal');
         
+        // Sanitize message (align with client sanitization)
+        $sanitizedMessage = $this->sanitizeHtml($request->message);
+
         $reply = $ticket->addReply(
-            $request->message,
+            $sanitizedMessage,
             auth()->id(),
             $isInternal
         );
@@ -313,6 +350,16 @@ class SupportTicketController extends Controller
         
         return redirect()->route('admin.tickets.show', $ticket)
                         ->with('success', 'Reply added successfully.');
+    }
+
+    /**
+     * Allow only safe HTML tags for rich text fields (same as client).
+     */
+    private function sanitizeHtml(string $content): string
+    {
+        $allowed = '<div><p><br><strong><em><u><ol><ul><li><a><span><blockquote><code><pre><table><thead><tbody><tr><th><td>';
+        $clean = strip_tags($content, $allowed);
+        return trim($clean);
     }
     
     /**

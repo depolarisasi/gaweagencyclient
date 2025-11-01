@@ -53,7 +53,8 @@
 
             <div class="form-control">
                 <label class="label"><span class="label-text font-medium">Description *</span></label>
-                <textarea id="ticket-description" name="description" class="textarea textarea-bordered w-full min-h-40" required placeholder="Describe your issue or request in detail">{{ old('description') }}</textarea>
+                <input id="ticket-description" type="hidden" name="description" value="{{ old('description') }}">
+                <trix-editor input="ticket-description" class="trix-content" placeholder="Describe your issue or request in detail"></trix-editor>
                 <p class="text-xs text-gray-500 mt-1">Rich text enabled. Images/file uploads are not allowed.</p>
                 @error('description')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
@@ -84,19 +85,18 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<link rel="stylesheet" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
+<script src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
+<style>
+  .trix-button-group--file-tools { display: none !important; }
+</style>
 <script>
-tinymce.init({
-  selector: '#ticket-description',
-  plugins: 'lists link autolink charmap code table',
-  toolbar: 'bold italic underline | bullist numlist | link | removeformat | code',
-  menubar: false,
-  branding: false,
-  height: 300,
-  // Disable images/file picker by not including image plugin
-  // Also restrict paste to remove images
-  paste_block_drop: true,
-  paste_data_images: false,
-});
+  // Disable file attachments in Trix (no images/files allowed via editor)
+  document.addEventListener('trix-file-accept', function (event) {
+    event.preventDefault();
+  });
+  document.addEventListener('trix-attachment-add', function (event) {
+    event.preventDefault();
+  });
 </script>
 @endpush

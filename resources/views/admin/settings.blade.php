@@ -95,6 +95,8 @@
         
         <!-- Main Content -->
         <div class="flex-1 p-8">
+            <form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-6">
+                @csrf
             <!-- Header -->
             <div class="flex items-center justify-between mb-8">
                 <div>
@@ -108,7 +110,7 @@
                         </svg>
                         Export Settings
                     </button>
-                    <button class="btn btn-primary btn-sm">
+                    <button type="submit" class="btn btn-primary btn-sm">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
@@ -116,6 +118,9 @@
                     </button>
                 </div>
             </div>
+            @if(session('status'))
+                <div class="alert alert-success mb-6">{{ session('status') }}</div>
+            @endif
             
             <!-- Settings Sections -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -140,35 +145,35 @@
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Company Name</span>
                                 </label>
-                                <input type="text" class="input input-bordered focus:input-primary" value="Gawe Agency" placeholder="Enter company name">
+                                <input name="company_name" type="text" class="input input-bordered focus:input-primary" value="{{ old('company_name', config('app.company_name')) }}" placeholder="Enter company name">
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Company Email</span>
                                 </label>
-                                <input type="email" class="input input-bordered focus:input-primary" value="info@gaweagency.com" placeholder="Enter company email">
+                                <input name="company_email" type="email" class="input input-bordered focus:input-primary" value="{{ old('company_email', config('app.company_email')) }}" placeholder="Enter company email">
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Phone Number</span>
                                 </label>
-                                <input type="tel" class="input input-bordered focus:input-primary" placeholder="Enter phone number">
+                                <input name="company_phone" type="tel" class="input input-bordered focus:input-primary" value="{{ old('company_phone', config('app.company_phone')) }}" placeholder="Enter phone number">
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Website URL</span>
                                 </label>
-                                <input type="url" class="input input-bordered focus:input-primary" value="https://gaweagency.com" placeholder="Enter website URL">
+                                <input name="company_website" type="url" class="input input-bordered focus:input-primary" value="{{ old('company_website', config('app.company_website')) }}" placeholder="Enter website URL">
                             </div>
                             
                             <div class="form-control md:col-span-2">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Company Address</span>
                                 </label>
-                                <textarea class="textarea textarea-bordered focus:textarea-primary" rows="3" placeholder="Enter company address"></textarea>
+                                <textarea name="company_address" class="textarea textarea-bordered focus:textarea-primary" rows="3" placeholder="Enter company address">{{ old('company_address', config('app.company_address')) }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -190,26 +195,27 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <fieldset class="fieldset mt-2">
                                 <legend class="fieldset-legend">Tripay Merchant Code</legend>
-                                <input type="text" class="input input-bordered focus:input-primary" placeholder="Enter merchant code">
+                                <input name="tripay_merchant_code" type="text" class="input input-bordered focus:input-primary" value="{{ old('tripay_merchant_code', config('tripay.merchant_code')) }}" placeholder="Enter merchant code">
                             </fieldset>
                             
                             <fieldset class="fieldset mt-2">
                                 <legend class="fieldset-legend">API Key</legend>
-                                <input type="password" class="input input-bordered focus:input-primary" placeholder="Enter API key">
+                                <input name="tripay_api_key" type="password" class="input input-bordered focus:input-primary" value="{{ old('tripay_api_key', config('tripay.api_key')) }}" placeholder="Enter API key">
                             </fieldset>
                             
                             <fieldset class="fieldset mt-2">
                                 <legend class="fieldset-legend">Private Key</legend>
-                                <input type="password" class="input input-bordered focus:input-primary" placeholder="Enter private key">
+                                <input name="tripay_private_key" type="password" class="input input-bordered focus:input-primary" value="{{ old('tripay_private_key', config('tripay.private_key')) }}" placeholder="Enter private key">
                             </fieldset>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Environment</span>
                                 </label>
-                                <select class="select select-bordered focus:select-primary">
-                                    <option value="sandbox">Sandbox (Testing)</option>
-                                    <option value="production">Production (Live)</option>
+                                <select name="tripay_mode" class="select select-bordered focus:select-primary">
+                                    @php($currentMode = old('tripay_mode', config('tripay.sandbox') ? 'sandbox' : 'production'))
+                                    <option value="sandbox" @if($currentMode==='sandbox') selected @endif>Sandbox (Testing)</option>
+                                    <option value="production" @if($currentMode==='production') selected @endif>Production (Live)</option>
                                 </select>
                             </div>
                             
@@ -242,37 +248,38 @@
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">SMTP Host</span>
                                 </label>
-                                <input type="text" class="input input-bordered focus:input-primary" placeholder="smtp.gmail.com">
+                                <input name="mail_host" type="text" class="input input-bordered focus:input-primary" value="{{ old('mail_host', config('mail.mailers.smtp.host')) }}" placeholder="smtp.gmail.com">
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">SMTP Port</span>
                                 </label>
-                                <input type="number" class="input input-bordered focus:input-primary" placeholder="587">
+                                <input name="mail_port" type="number" class="input input-bordered focus:input-primary" value="{{ old('mail_port', config('mail.mailers.smtp.port')) }}" placeholder="587">
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Username</span>
                                 </label>
-                                <input type="email" class="input input-bordered focus:input-primary" placeholder="your-email@gmail.com">
+                                <input name="mail_username" type="text" class="input input-bordered focus:input-primary" value="{{ old('mail_username', config('mail.mailers.smtp.username')) }}" placeholder="your-email@gmail.com">
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Password</span>
                                 </label>
-                                <input type="password" class="input input-bordered focus:input-primary" placeholder="Enter password">
+                                <input name="mail_password" type="password" class="input input-bordered focus:input-primary" value="{{ old('mail_password', config('mail.mailers.smtp.password')) }}" placeholder="Enter password">
                             </div>
                             
                             <div class="form-control">
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">Encryption</span>
                                 </label>
-                                <select class="select select-bordered focus:select-primary">
-                                    <option value="tls">TLS</option>
-                                    <option value="ssl">SSL</option>
+                                <select name="mail_encryption" class="select select-bordered focus:select-primary">
+                                    @php($currentEnc = old('mail_encryption', config('mail.mailers.smtp.encryption')))
+                                    <option value="tls" @if($currentEnc==='tls') selected @endif>TLS</option>
+                                    <option value="ssl" @if($currentEnc==='ssl') selected @endif>SSL</option>
                                 </select>
                             </div>
                             
@@ -280,7 +287,7 @@
                                 <label class="label">
                                     <span class="label-text font-medium text-gray-700">From Name</span>
                                 </label>
-                                <input type="text" class="input input-bordered focus:input-primary" value="Gawe Agency" placeholder="Enter sender name">
+                                <input name="mail_from_name" type="text" class="input input-bordered focus:input-primary" value="{{ old('mail_from_name', config('mail.from.name')) }}" placeholder="Enter sender name">
                             </div>
                         </div>
                     </div>
@@ -378,6 +385,7 @@
                     </div>
                 </div>
             </div>
+            </form>
         </div>
     </div>
 </div>

@@ -111,6 +111,13 @@
 - ✅ Cart system testing dengan edge cases
 - ✅ Payment integration testing dengan Tripay sandbox
 
+**Support Tickets Enhancements:**
+- ✅ Balasan internal admin disembunyikan dari thread percakapan klien (client tickets show)
+- ✅ Fitur reopen tiket: Admin dapat membuka kembali tiket berstatus closed via endpoint dan UI (show & index)
+
+### Security & Input Sanitization
+- ✅ Paritas sanitasi HTML untuk Support Tickets: sisi Admin kini menggunakan sanitasi yang sama dengan Client (allowed tags whitelist) pada `description` (create/update) dan `message` (reply) untuk mitigasi XSS.
+
 ## What's Left to Build 🚧
 
 ### Priority 1: Testing & Quality Assurance (20% Complete)
@@ -201,6 +208,7 @@
 - Enhanced error handling di beberapa areas
 - Optimization untuk query performance
 - Automated testing coverage yang lebih comprehensive
+ - Tambah tests untuk memastikan internal replies tidak muncul di client dan aksi reopen hanya untuk admin/staff
 
 ### Security Considerations
 - Regular security audits needed

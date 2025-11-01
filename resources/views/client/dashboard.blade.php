@@ -20,7 +20,7 @@
             </div>
             
             <!-- Welcome Card -->
-            <div class="border bg-base-100 rounded-md p-6 ">
+            <div class="border border-base-300 bg-base-100 rounded-md p-6 ">
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 class="text-xl font-semibold mb-2">Hello, {{ auth()->user()->name }}!</h2>
@@ -44,7 +44,7 @@
             
             <!-- Statistics Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-6">
-                <div class="rounded-md shadow-sm border bg-base-100 p-6 hover:shadow-md transition-shadow">
+                <div class="rounded-md shadow-sm border border-base-300 bg-base-100 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium  mb-1">Active Projects</p>
@@ -59,7 +59,7 @@
                     </div>
                 </div>
                 
-                <div class="rounded-md shadow-sm border bg-base-100 p-6 hover:shadow-md transition-shadow">
+                <div class="rounded-md shadow-sm border border-base-300 bg-base-100 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium  mb-1">Completed Projects</p>
@@ -74,7 +74,7 @@
                     </div>
                 </div>
                 
-                <div class="rounded-md shadow-sm border bg-base-100 p-6 hover:shadow-md transition-shadow">
+                <div class="rounded-md shadow-sm border border-base-300 bg-base-100 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium  mb-1">Pending Invoices</p>
@@ -89,7 +89,7 @@
                     </div>
                 </div>
                 
-                <div class="rounded-md shadow-sm border bg-base-100 p-6 hover:shadow-md transition-shadow">
+                <div class="rounded-md shadow-sm border border-base-300 bg-base-100 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium  mb-1">Support Tickets</p>
@@ -108,14 +108,14 @@
             <!-- Main Content Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <!-- My Projects -->
-                <div class="lg:col-span-2 rounded-md shadow-sm border bg-base-100 p-6">
+                <div class="lg:col-span-2 rounded-md shadow-sm border border-base-300 bg-base-100 p-6">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-semibold ">My Projects</h3>
                         <a href="#" class="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</a>
                     </div>
                     <div class="space-y-4">
                         @forelse(\App\Models\Project::where('user_id', auth()->id())->latest()->take(5)->get() as $project)
-                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div class="border border-base-300 border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                             <div class="flex items-center justify-between">
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-3">
@@ -171,10 +171,10 @@
                 </div>
                 
                 <!-- Quick Actions Sidebar -->
-                <div class="rounded-md shadow-sm border bg-base-100 p-6">
+                <div class="rounded-md shadow-sm border border-base-300 bg-base-100 p-6">
                     <h3 class="text-lg font-semibold  mb-4">Quick Actions</h3>
                     <div class="space-y-3">
-                        <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors border border-green-200">
+                        <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors border border-base-300 border-green-200">
                             <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-plus text-green-600"></i>
                             </div>

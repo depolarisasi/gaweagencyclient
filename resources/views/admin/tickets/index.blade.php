@@ -4,75 +4,8 @@
 
 @section('content')
 <div class="min-h-screen bg-gray-50">
-    <div class="flex">
-        <!-- Sidebar -->
-        <div class="w-64 bg-white shadow-lg border-r border-gray-200">
-            <div class="p-6">
-                <div class="flex items-center space-x-3 mb-8">
-                    <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-crown text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-800">Admin Panel</h3>
-                        <p class="text-xs text-gray-500">Management Center</p>
-                    </div>
-                </div>
-                
-                <nav class="space-y-2">
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                        <i class="fas fa-chart-line w-5"></i>
-                        <span class="font-medium">Dashboard</span>
-                    </a>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Management</p>
-                        
-                        <a href="{{ route('admin.users.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-users w-5"></i>
-                            <span>User Management</span>
-                        </a>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-box w-5"></i>
-                            <span>Products</span>
-                        </a>
-                        
-                        <a href="{{ route('admin.projects.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-project-diagram w-5"></i>
-                            <span>Projects</span>
-                        </a>
-                        
-                        <a href="{{ route('admin.invoices.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-file-invoice w-5"></i>
-                            <span>Invoices</span>
-                        </a>
-                    </div>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Support</p>
-                        
-                        <a href="{{ route('admin.tickets.index') }}" class="flex items-center space-x-3 px-4 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200">
-                            <i class="fas fa-ticket-alt w-5"></i>
-                            <span>Support Tickets</span>
-                        </a>
-                    </div>
-                    
-                    <div class="pt-4">
-                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Settings</p>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-palette w-5"></i>
-                            <span>Templates</span>
-                        </a>
-                        
-                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                            <i class="fas fa-credit-card w-5"></i>
-                            <span>Payment Settings</span>
-                        </a>
-                    </div>
-                </nav>
-            </div>
-        </div>
+    <div class="flex"> 
+        @include('layouts.sidebar')
         
         <!-- Main Content -->
         <div class="flex-1 p-8">
@@ -86,7 +19,7 @@
                     <button class="btn btn-outline btn-sm">
                         <i class="fas fa-download mr-2"></i>Export Tickets
                     </button>
-                    <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
+                    <button class="btn btn-primary btn-sm" onclick="openCreatePage()">
                         <i class="fas fa-plus mr-2"></i>Create Ticket
                     </button>
                 </div>
@@ -188,8 +121,8 @@
                         <select name="assigned_to" class="select select-bordered w-full">
                             <option value="">All Staff</option>
                             <option value="unassigned" {{ request('assigned_to') == 'unassigned' ? 'selected' : '' }}>Unassigned</option>
-                            @foreach(\App\Models\User::where('role', 'staff')->where('status', 'active')->get() as $staff)
-                                <option value="{{ $staff->id }}" {{ request('assigned_to') == $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
+                            @foreach($staff as $member)
+                                <option value="{{ $member->id }}" {{ request('assigned_to') == $member->id ? 'selected' : '' }}>{{ $member->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -343,6 +276,9 @@
                                                 @if($ticket->status !== 'closed')
                                                 <li><a onclick="closeTicket({{ $ticket->id }})"><i class="fas fa-times mr-2"></i>Close Ticket</a></li>
                                                 @endif
+                                                @if($ticket->status === 'closed')
+                                                <li><a onclick="reopenTicket({{ $ticket->id }})"><i class="fas fa-undo mr-2"></i>Reopen Ticket</a></li>
+                                                @endif
                                                 <li><a onclick="deleteTicket({{ $ticket->id }})" class="text-red-600"><i class="fas fa-trash mr-2"></i>Delete</a></li>
                                             </ul>
                                         </div>
@@ -399,8 +335,8 @@
                     </label>
                     <select name="assigned_to" class="select select-bordered focus:select-primary">
                         <option value="">Select Staff Member</option>
-                        @foreach(\App\Models\User::where('role', 'staff')->where('status', 'active')->get() as $staff)
-                            <option value="{{ $staff->id }}">{{ $staff->name }}</option>
+                        @foreach($staff as $member)
+                            <option value="{{ $member->id }}">{{ $member->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -439,7 +375,8 @@
                 <!-- Description -->
                 <fieldset class="fieldset md:col-span-2 mt-2">
                     <legend class="fieldset-legend">Description *</legend>
-                    <textarea name="description" class="textarea textarea-bordered focus:textarea-primary" rows="4" required placeholder="Detailed description of the issue or request..."></textarea>
+                    <input id="admin-create-description" type="hidden" name="description">
+                    <trix-editor input="admin-create-description" class="trix-content" placeholder="Detailed description of the issue or request..."></trix-editor>
                 </fieldset>
             </div>
             
@@ -465,7 +402,8 @@
                 <label class="label">
                     <span class="label-text font-medium">Reply Message *</span>
                 </label>
-                <textarea name="message" class="textarea textarea-bordered" rows="5" required placeholder="Type your reply here..."></textarea>
+                <input id="admin-reply-message" type="hidden" name="message">
+                <trix-editor input="admin-reply-message" class="trix-content" placeholder="Type your reply here..."></trix-editor>
             </div>
             
             <div class="form-control mb-4">
@@ -486,10 +424,8 @@
 </div>
 
 <script>
-function openCreateModal() {
-    document.getElementById('modalTitle').textContent = 'Create New Ticket';
-    document.getElementById('ticketForm').reset();
-    document.getElementById('ticketModal').classList.add('modal-open');
+function openCreatePage() {
+    window.location.href = `/admin/tickets/create`;
 }
 
 function closeModal() {
@@ -501,9 +437,7 @@ function viewTicket(ticketId) {
 }
 
 function replyTicket(ticketId) {
-    document.getElementById('replyTicketId').value = ticketId;
-    document.getElementById('replyForm').reset();
-    document.getElementById('replyModal').classList.add('modal-open');
+    window.location.href = `/admin/tickets/${ticketId}#replySection`;
 }
 
 function closeReplyModal() {
@@ -511,26 +445,41 @@ function closeReplyModal() {
 }
 
 function assignTicket(ticketId) {
-    // Simple prompt for now - could be enhanced with a proper modal
-    const staffSelect = prompt('Enter staff ID to assign:');
-    if (staffSelect) {
-        fetch(`/admin/tickets/${ticketId}/assign`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ assigned_to: staffSelect })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error assigning ticket');
-            }
-        });
-    }
+    const staff = window.ADMIN_STAFF || [];
+    const optionsHtml = staff.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    Swal.fire({
+        title: 'Assign to staff',
+        html: `<select id="assignSelect" class="select select-bordered w-full">${optionsHtml}</select>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Assign',
+        cancelButtonText: 'Batal',
+        preConfirm: () => {
+            const select = document.getElementById('assignSelect');
+            return select ? select.value : null;
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            fetch(`/admin/tickets/${ticketId}/assign`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ assigned_to: result.value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({ title: 'Berhasil', text: 'Tiket diassign.', icon: 'success' }).then(() => location.reload());
+                } else {
+                    Swal.fire({ title: 'Gagal', text: data.message || 'Error assigning ticket', icon: 'error' });
+                }
+            })
+            .catch(() => Swal.fire({ title: 'Gagal', text: 'Kesalahan jaringan', icon: 'error' }));
+        }
+    });
 }
 
 function markInProgress(ticketId) {
@@ -677,6 +626,54 @@ function closeTicket(ticketId) {
     });
 }
 
+function reopenTicket(ticketId) {
+    Swal.fire({
+        title: 'Buka kembali tiket?',
+        text: 'Tiket yang sudah closed akan dibuka kembali menjadi open.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, buka',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/tickets/${ticketId}/reopen`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: 'Tiket berhasil dibuka kembali.',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Gagal',
+                        text: data.message || 'Kesalahan saat membuka kembali tiket.',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(() => {
+                Swal.fire({
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan jaringan.',
+                    icon: 'error'
+                });
+            });
+        }
+    });
+}
+
 function deleteTicket(ticketId) {
     Swal.fire({
         title: 'Anda yakin?',
@@ -774,4 +771,21 @@ document.getElementById('replyForm').addEventListener('submit', function(e) {
     });
 });
 </script>
+<script>
+  window.ADMIN_STAFF = @json($staff);
+</script>
+<link rel="stylesheet" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
+<script src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
+<script>
+  // Disable file attachments in Trix (no images/files allowed via editor)
+  document.addEventListener('trix-file-accept', function (event) {
+    event.preventDefault();
+  });
+  document.addEventListener('trix-attachment-add', function (event) {
+    event.preventDefault();
+  });
+</script>
+<style>
+  .trix-button-group--file-tools { display: none !important; }
+</style>
 @endsection

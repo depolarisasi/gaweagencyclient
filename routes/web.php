@@ -143,6 +143,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/tickets/{ticket}/in-progress', [AdminSupportTicketController::class, 'markInProgress'])->name('admin.tickets.in-progress');
     Route::post('/tickets/{ticket}/resolve', [AdminSupportTicketController::class, 'resolve'])->name('admin.tickets.resolve');
     Route::post('/tickets/{ticket}/close', [AdminSupportTicketController::class, 'close'])->name('admin.tickets.close');
+    Route::post('/tickets/{ticket}/reopen', [AdminSupportTicketController::class, 'reopen'])->name('admin.tickets.reopen');
     Route::post('/tickets/{ticket}/reply', [AdminSupportTicketController::class, 'reply'])->name('admin.tickets.reply');
     Route::post('/tickets/bulk-action', [AdminSupportTicketController::class, 'bulkAction'])->name('admin.tickets.bulk-action');
     Route::get('/tickets-statistics', [AdminSupportTicketController::class, 'statistics'])->name('admin.tickets.statistics');
@@ -177,6 +178,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/subscription-plans/{subscriptionPlan}/toggle-status', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'toggleStatus'])->name('admin.subscription-plans.toggle-status');
     
     Route::get('/settings', [AdminDashboardController::class, 'settings'])->name('admin.settings');
+    Route::post('/settings', [AdminDashboardController::class, 'updateSettings'])->name('admin.settings.update');
 });
 
 Route::middleware(['auth', 'role:staff'])->prefix('staff')->group(function () {

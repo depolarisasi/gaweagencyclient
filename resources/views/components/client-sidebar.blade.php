@@ -1,5 +1,5 @@
 <!-- Client Sidebar Component -->
-<div class="w-64 bg-base-100 shadow-sm border-r">
+<div class="w-64 bg-base-100 shadow-sm border-r border-base-300">
     <div class="p-6">
         <div class="flex items-center space-x-3 mb-8">
             <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">

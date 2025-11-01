@@ -11,6 +11,9 @@ Aplikasi GaweClient telah mencapai tahap development yang sangat matang dengan s
 - **Enhanced Testing**: Comprehensive test coverage untuk checkout flow dan subscription management
 - **Domain Management**: Advanced domain selection dan validation system
 - **Payment Integration**: Fully functional Tripay integration dengan fee calculation
+ - **Security Hardening (Support Tickets - Admin)**: Sanitasi HTML pada `Admin\SupportTicketController` (fields `description` dan `message`) diselaraskan dengan client-side untuk mencegah XSS.
+ - **Support Tickets Visibility**: Balasan internal (`is_internal = true`) kini disembunyikan dari tampilan klien (client tickets show), namun tetap terlihat di tampilan admin.
+ - **Support Tickets Reopen**: Admin dapat membuka kembali tiket yang berstatus `closed` melalui endpoint `admin.tickets.reopen` dan UI tombol di halaman show serta aksi dropdown di index.
 
 ## Current State Analysis
 
@@ -107,6 +110,7 @@ Aplikasi GaweClient telah mencapai tahap development yang sangat matang dengan s
    - Comprehensive testing of payment flows
    - User acceptance testing for all roles
    - Performance optimization
+   - Tambahkan feature tests untuk: visibilitas balasan internal di client, dan aksi reopen oleh admin.
 
 2. **Documentation & Deployment**
    - API documentation

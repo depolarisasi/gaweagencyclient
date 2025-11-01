@@ -1,5 +1,5 @@
   <!-- Navigation Bar -->
-    <nav class="navbar sticky top-0 z-50 bg-base-100 border-b ">
+    <nav class="navbar sticky top-0 z-50 bg-base-100 border-b border-base-300">
         <div class="navbar-start">
             <a href="{{ url('/') }}">
             <img src="{{ asset('images/gawe-logo.png') }}" alt="Gawe Agency" class="h-8 ml-5">

@@ -329,7 +329,7 @@ class SupportTicketController extends Controller
      */
     private function sanitizeHtml(string $content): string
     {
-        $allowed = '<p><br><strong><em><u><ol><ul><li><a><span><blockquote><code><pre><table><thead><tbody><tr><th><td>';
+        $allowed = '<div><p><br><strong><em><u><ol><ul><li><a><span><blockquote><code><pre><table><thead><tbody><tr><th><td>';
         $clean = strip_tags($content, $allowed);
         return trim($clean);
     }
@@ -344,12 +344,15 @@ class SupportTicketController extends Controller
             abort(403, 'Unauthorized access to this ticket.');
         }
         
-        // Only allow closing resolved tickets
-        if ($ticket->status !== 'resolved') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only resolved tickets can be closed by clients'
-            ], 400);
+        // Allow closing any ticket that is not already closed
+        if ($ticket->status === 'closed') {
+            return request()->expectsJson()
+                ? response()->json([
+                    'success' => false,
+                    'message' => 'Ticket is already closed'
+                ], 400)
+                : redirect()->route('client.tickets.show', $ticket)
+                    ->with('error', 'Ticket is already closed.');
         }
         
         $ticket->markAsClosed(auth()->id());

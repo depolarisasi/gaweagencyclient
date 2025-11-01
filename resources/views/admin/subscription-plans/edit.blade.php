@@ -1,6 +1,12 @@
-<x-layouts.admin>
-    @section('title', 'Edit Paket Langganan')
+@extends('layouts.app')
 
+@section('title', 'Subscription Plans Management - Admin')
+
+@section('content')
+<div class="min-h-screen bg-gray-50">
+    <div class="flex">
+        @include('layouts.sidebar')
+        <div class="flex-1 p-8">
     <div class="space-y-6">
         <!-- Header -->
         <div class="flex items-center space-x-4">
@@ -237,4 +243,7 @@
             });
         });
     </script>
-</x-layouts.admin>
+        </div>
+    </div>
+</div>
+@endsection

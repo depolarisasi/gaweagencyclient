@@ -19,7 +19,7 @@
             
             <!-- Quick Stats -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6">
+                <div class="bg-white rounded-md shadow-sm border border-base-300 p-6">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">My Tickets</p>
@@ -31,7 +31,7 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6">
+                <div class="bg-white rounded-md shadow-sm border border-base-300 p-6">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Open Tickets</p>
@@ -43,7 +43,7 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6">
+                <div class="bg-white rounded-md shadow-sm border border-base-300 p-6">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 mb-1">Resolved</p>
@@ -57,7 +57,7 @@
             </div>
             
             <!-- Filters -->
-            <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 mb-6">
+            <div class="bg-white rounded-md shadow-sm border border-base-300 p-6 mb-6">
                 <form method="GET" action="{{ route('client.tickets.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
@@ -100,7 +100,7 @@
             <!-- Tickets List -->
             <div class="space-y-4">
                 @forelse($tickets as $ticket)
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-6 hover:shadow-md transition-shadow">
+                <div class="bg-white rounded-md shadow-sm border border-base-300 p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
                             <div class="flex items-center space-x-3 mb-2">
@@ -191,7 +191,7 @@
                     </div>
                 </div>
                 @empty
-                <div class="bg-white rounded-md shadow-sm border border-gray-300 p-12 text-center">
+                <div class="bg-white rounded-md shadow-sm border border-base-300 p-12 text-center">
                     <i class="fas fa-ticket-alt text-gray-300 text-6xl mb-4"></i>
                     <h3 class="text-xl font-semibold text-gray-900 mb-2">No Support Tickets</h3>
                     <p class="text-gray-600 mb-6">You haven't created any support tickets yet. Need help? Create your first ticket!</p>

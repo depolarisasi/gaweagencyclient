@@ -37,8 +37,8 @@
                 </a>
             @endif
 
-            @if($ticket->status === 'resolved')
-                <form method="POST" action="{{ route('client.tickets.close', $ticket) }}" class="inline">
+            @if($ticket->status !== 'closed')
+                <form method="POST" action="{{ route('client.tickets.close', $ticket) }}" class="inline close-ticket-form">
                     @csrf
                     <button type="submit" class="btn btn-outline btn-sm">
                         <i class="fas fa-door-closed mr-2"></i>Close Ticket
@@ -76,8 +76,8 @@
             </div>
             @endif
         </div>
-        <div class="prose max-w-none">
-            <p class="text-gray-800 whitespace-pre-line">{{ $ticket->description }}</p>
+        <div class="prose max-w-none text-gray-800">
+            {!! $ticket->description !!}
         </div>
     </div>
 
@@ -85,7 +85,7 @@
     <div class="space-y-4">
         <h2 class="text-lg font-semibold text-gray-900">Conversation</h2>
         @php use Illuminate\Support\Facades\Storage; @endphp
-        @forelse($ticket->replies->sortBy('created_at') as $reply)
+        @forelse($ticket->replies->where('is_internal', false)->sortBy('created_at') as $reply)
             <div class="bg-white rounded-md shadow-sm border {{ $reply->user_id === auth()->id() ? 'border-blue-300' : 'border-gray-300' }} p-4">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center space-x-2">
@@ -97,7 +97,7 @@
                     </div>
                     <div class="text-sm text-gray-500">{{ $reply->created_at->format('M d, Y H:i') }}</div>
                 </div>
-                <div class="text-gray-700 whitespace-pre-line">{{ $reply->message }}</div>
+                <div class="prose max-w-none text-gray-700">{!! $reply->message !!}</div>
                 @if($reply->attachments)
                     <div class="mt-3 border-t pt-3">
                         <div class="text-sm font-medium text-gray-700 mb-2">
@@ -121,3 +121,30 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const forms = document.querySelectorAll('.close-ticket-form');
+  forms.forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      Swal.fire({
+        title: 'Tutup tiket ini?',
+        text: 'Tiket akan ditandai Closed dan tidak bisa dibalas lagi.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, tutup',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          form.submit();
+        }
+      });
+    });
+  });
+});
+</script>
+@endpush
