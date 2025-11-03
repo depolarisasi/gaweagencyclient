@@ -5,48 +5,50 @@
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Progress Bar -->
+        <!-- Progress Steps -->
         <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <div class="flex items-center text-green-600">
-                        <div class="flex items-center justify-center w-8 h-8 border-2 border-green-600 rounded-full bg-green-600 text-white text-sm font-medium">
-                            ✓
-                        </div>
-                        <span class="ml-2 text-sm font-medium">Template</span>
+            <div class="flex items-center justify-center">
+                <div class="flex items-center space-x-4">
+                    <!-- Langkah 1: Domain (selesai) -->
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                        <span class="ml-2 text-sm font-medium text-gray-900">Domain</span>
                     </div>
-                </div>
-                <div class="flex-1 mx-4 h-1 bg-green-600"></div>
-                <div class="flex items-center">
-                    <div class="flex items-center text-green-600">
-                        <div class="flex items-center justify-center w-8 h-8 border-2 border-green-600 rounded-full bg-green-600 text-white text-sm font-medium">
-                            ✓
-                        </div>
-                        <span class="ml-2 text-sm font-medium">Konfigurasi</span>
+                    <div class="w-8 h-px bg-green-500"></div>
+
+                    <!-- Langkah 2: Template (selesai) -->
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                        <span class="ml-2 text-sm font-medium text-gray-900">Template</span>
                     </div>
-                </div>
-                <div class="flex-1 mx-4 h-1 bg-green-600"></div>
-                <div class="flex items-center">
-                    <div class="flex items-center text-blue-600">
-                        <div class="flex items-center justify-center w-8 h-8 border-2 border-blue-600 rounded-full bg-blue-600 text-white text-sm font-medium">
-                            3
-                        </div>
-                        <span class="ml-2 text-sm font-medium">Add-ons</span>
+                    <div class="w-8 h-px bg-green-500"></div>
+
+                    <!-- Langkah 3: Info Personal (selesai) -->
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                        <span class="ml-2 text-sm font-medium text-gray-900">Info Personal</span>
                     </div>
-                </div>
-                <div class="flex-1 mx-4 h-1 bg-gray-200"></div>
-                <div class="flex items-center text-gray-400">
-                    <div class="flex items-center justify-center w-8 h-8 border-2 border-gray-300 rounded-full text-sm font-medium">
-                        4
+                    <div class="w-8 h-px bg-blue-500"></div>
+
+                    <!-- Langkah 4: Paket & Add-ons (aktif) -->
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">4</div>
+                        <span class="ml-2 text-sm font-medium text-blue-600">Paket & Add-ons</span>
                     </div>
-                    <span class="ml-2 text-sm font-medium">Info Personal</span>
-                </div>
-                <div class="flex-1 mx-4 h-1 bg-gray-200"></div>
-                <div class="flex items-center text-gray-400">
-                    <div class="flex items-center justify-center w-8 h-8 border-2 border-gray-300 rounded-full text-sm font-medium">
-                        5
+                    <div class="w-8 h-px bg-gray-300"></div>
+
+                    <!-- Langkah 5: Ringkasan -->
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">5</div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">Ringkasan</span>
                     </div>
-                    <span class="ml-2 text-sm font-medium">Ringkasan</span>
+                    <div class="w-8 h-px bg-gray-300"></div>
+
+                    <!-- Langkah 6: Pembayaran -->
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">6</div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">Pembayaran</span>
+                    </div>
                 </div>
             </div>
         </div>

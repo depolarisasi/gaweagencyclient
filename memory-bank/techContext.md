@@ -335,3 +335,36 @@
 - Authorization failures
 - Suspicious activities
 - API access logs
+## Pricing & Discount Integration
+
+### Overview
+- Sistem harga berlangganan kini mengintegrasikan diskon secara konsisten end-to-end pada model, service, komponen Livewire, dan tampilan Blade.
+
+### Model Accessor
+- `SubscriptionPlan::discounted_price` menghitung harga akhir menggunakan `discount_percentage`.
+- Rumus: `final = price - (price * discount_percentage / 100)` dengan normalisasi 2 desimal dan penjagaan agar tidak negatif.
+- Tujuan: Menjadi satu sumber kebenaran untuk semua kalkulasi diskon.
+
+### Service Layer
+- `CartService` menggunakan `discounted_price` untuk mengisi `template_amount` dan `subscriptionAmount`.
+- Perhitungan `subtotal` dan `total_amount` otomatis ikut merefleksikan harga pasca-diskon.
+
+### Livewire Components
+- `CheckoutSummaryComponent` mengkalkulasi `subscriptionAmount`, `subtotal`, dan `totalAmount` menggunakan `discounted_price` sehingga UI dan backend selaras.
+
+### Blade Views
+- `resources/views/livewire/checkout-summary-component.blade.php`: Menampilkan breakdown dengan harga asli (strikethrough), persen diskon, dan harga akhir.
+- `resources/views/checkout/addons.blade.php`: Menampilkan harga diskon untuk subscription plan di halaman addons.
+
+### Order & Invoice
+- Nilai yang digunakan pada pembuatan `Order` dan `Invoice` di alur checkout berasal dari total checkout yang telah memakai `discounted_price` melalui `CartService`/`CheckoutSummaryComponent`.
+
+### Testing Recommendations
+- Unit test untuk `SubscriptionPlan::discounted_price` (kasus 0%, >0%, dan edge cases).
+- Feature/integration test untuk kalkulasi `CartService` dan `CheckoutSummaryComponent` agar subtotal/total konsisten.
+- Validasi tampilan breakdown di Blade dengan snapshot/DOM assertion.
+- Pastikan akurasi jumlah pada `Invoice`/`Order` terhadap hasil perhitungan checkout.
+
+### Display & Rounding
+- Penyajian harga menggunakan format 2 desimal konsisten dengan tipe `decimal:2` pada model terkait.
+- Gunakan helper/formatting yang ada (`CurrencyHelper`) untuk tampilan harga, bila tersedia.

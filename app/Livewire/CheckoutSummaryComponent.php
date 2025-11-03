@@ -16,6 +16,7 @@ class CheckoutSummaryComponent extends Component
     public $domainInfo;
     public $subscriptionAmount;
     public $addonsAmount;
+    public $domainAmount;
     public $totalAmount;
     public $paymentChannels;
     public $selectedPaymentChannel;
@@ -34,10 +35,38 @@ class CheckoutSummaryComponent extends Component
 
     public function calculateAmounts()
     {
-        $this->subscriptionAmount = $this->subscriptionPlan->price;
+        // Gunakan harga setelah diskon jika ada
+        $this->subscriptionAmount = $this->subscriptionPlan->discounted_price ?? $this->subscriptionPlan->price;
         $this->addonsAmount = $this->addons->sum('price');
-        // Domain price is included in subscription; do not add domain price
-        $this->totalAmount = $this->subscriptionAmount + $this->addonsAmount;
+        // Hitung harga domain jika domain baru
+        $this->domainAmount = 0;
+        try {
+            $type = $this->domainInfo['type'] ?? $this->domainInfo['domain_type'] ?? null;
+            if ($type === 'new') {
+                if (isset($this->domainInfo['price']) && is_numeric($this->domainInfo['price'])) {
+                    $this->domainAmount = (float) $this->domainInfo['price'];
+                } else {
+                    $tld = $this->domainInfo['tld'] ?? null;
+                    $domainName = $this->domainInfo['name'] ?? $this->domainInfo['domain_name'] ?? '';
+                    if (!$tld && $domainName) {
+                        $parts = explode('.', $domainName);
+                        if (count($parts) > 1) {
+                            $tld = implode('.', array_slice($parts, 1));
+                        }
+                    }
+                    $domainService = app(\App\Services\DomainService::class);
+                    $prices = $domainService->getDomainPrices();
+                    $this->domainAmount = $tld && isset($prices[$tld]) ? (float) $prices[$tld] : 150000.0;
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('CheckoutSummaryComponent::calculateAmounts gagal menghitung harga domain', [
+                'error' => $e->getMessage(),
+            ]);
+            $this->domainAmount = 0;
+        }
+
+        $this->totalAmount = $this->subscriptionAmount + $this->addonsAmount + $this->domainAmount;
     }
 
     public function loadPaymentChannels()

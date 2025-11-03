@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubscriptionPlan extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -111,6 +112,21 @@ class SubscriptionPlan extends Model
         }
         
         return 'Hemat Rp ' . number_format($savings, 0, ',', '.');
+    }
+
+    /**
+     * Get price after applying discount percentage
+     */
+    public function getDiscountedPriceAttribute(): float
+    {
+        $discount = (float) ($this->discount_percentage ?? 0);
+        $price = (float) ($this->price ?? 0);
+        if ($discount <= 0) {
+            return $price;
+        }
+        $discounted = $price * (1 - ($discount / 100));
+        // Keep two decimals as per casts
+        return round($discounted, 2);
     }
 
     /**

@@ -53,11 +53,6 @@
                             <label class="block text-sm font-medium text-gray-500">Harga</label>
                             <p class="text-lg font-medium text-gray-900">
                                 Rp {{ number_format($subscriptionPlan->price, 0, ',', '.') }}
-                                @if($subscriptionPlan->discount_percentage > 0)
-                                    <span class="text-sm text-green-600 ml-2">
-                                        (Diskon {{ $subscriptionPlan->discount_percentage }}%)
-                                    </span>
-                                @endif
                             </p>
                         </div>
                         
@@ -72,6 +67,17 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-500">Urutan Tampil</label>
                             <p class="text-lg font-medium text-gray-900">{{ $subscriptionPlan->sort_order }}</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Diskon</label>
+                            <p class="text-lg font-medium text-gray-900">
+                                @if((float)($subscriptionPlan->discount_percentage ?? 0) > 0)
+                                    {{ rtrim(rtrim(number_format($subscriptionPlan->discount_percentage, 2, ',', '.'), '0'), ',') }}%
+                                @else
+                                    -
+                                @endif
+                            </p>
                         </div>
                     </div>
                     

@@ -175,6 +175,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         'update' => 'admin.subscription-plans.update',
         'destroy' => 'admin.subscription-plans.destroy'
     ]);
+     Route::post('/subscription-plans/{id}/restore', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'restore'])->name('admin.subscription-plans.restore');
     Route::post('/subscription-plans/{subscriptionPlan}/toggle-status', [\App\Http\Controllers\Admin\SubscriptionPlanController::class, 'toggleStatus'])->name('admin.subscription-plans.toggle-status');
     
     Route::get('/settings', [AdminDashboardController::class, 'settings'])->name('admin.settings');
@@ -253,21 +254,25 @@ Route::prefix('checkout')->name('checkout.')->group(function () {
     // Step 3: Addons - Product addon selection (optional)
     Route::get('/addon/', [App\Http\Controllers\CheckoutController::class, 'addons'])->name('addon');
     Route::post('/addon/', [App\Http\Controllers\CheckoutController::class, 'addons'])->name('addon.post');
+
+    // Step 4: Domain - Pilih dan verifikasi domain
+    Route::get('/domain', [App\Http\Controllers\CheckoutController::class, 'domain'])->name('domain');
+    Route::post('/domain', [App\Http\Controllers\CheckoutController::class, 'domain'])->name('domain.post');
     
-    // Step 4: Personal Info - Domain and user data
+    // Step 5: Personal Info - Data pengguna
     Route::get('/personal-info', [App\Http\Controllers\CheckoutController::class, 'personalInfo'])->name('personal-info');
     Route::post('/personal-info', [App\Http\Controllers\CheckoutController::class, 'personalInfo'])->name('personal-info.post');
     
-    // Step 5: Summary - Order summary and payment method selection
+    // Step 6: Summary - Ringkasan order dan pemilihan metode pembayaran
     Route::get('/summary', [App\Http\Controllers\CheckoutController::class, 'summary'])->name('summary');
     Route::post('/summary', [App\Http\Controllers\CheckoutController::class, 'submit'])->name('submit');
     
-    // Step 6: Billing - Payment information (VA/QR/payment guide)
+    // Step 7: Billing - Informasi pembayaran (VA/QR/panduan)
     Route::get('/billing', [App\Http\Controllers\CheckoutController::class, 'billing'])->name('billing');
     
     // Test route for creating Tripay data
     Route::get('/test/create-tripay-data', [App\Http\Controllers\CheckoutController::class, 'createTestTripayData'])->name('test.tripay');
     
-    // Step 7: Success
+    // Step 8: Success
     Route::get('/success', [App\Http\Controllers\CheckoutController::class, 'success'])->name('success');
 });

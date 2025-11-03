@@ -50,6 +50,15 @@
                         </select>
                     </div>
                     
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status Arsip</label>
+                        <select name="trashed" class="select select-bordered w-full">
+                            <option value="" {{ request('trashed') == '' ? 'selected' : '' }}>Tanpa arsip</option>
+                            <option value="with" {{ request('trashed') == 'with' ? 'selected' : '' }}>Termasuk arsip</option>
+                            <option value="only" {{ request('trashed') == 'only' ? 'selected' : '' }}>Hanya arsip</option>
+                        </select>
+                    </div>
+                    
                     <div class="flex items-end space-x-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search mr-2"></i>Filter
@@ -82,7 +91,11 @@
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td>
                                         <div>
-                                            <div class="font-medium text-gray-900">{{ $plan->name }}</div>
+                                            <div class="font-medium text-gray-900">{{ $plan->name }}
+                                                @if($plan->trashed())
+                                                    <span class="badge badge-warning ml-2">Diarsipkan</span>
+                                                @endif
+                                            </div>
                                             @if($plan->description)
                                                 <div class="text-sm text-gray-500">{{ Str::limit($plan->description, 50) }}</div>
                                             @endif
@@ -92,15 +105,16 @@
                                         <div class="font-medium text-gray-900">Rp {{ number_format($plan->price, 0, ',', '.') }}</div>
                                     </td>
                                     <td>
-                                        <span class="badge badge-outline">{{ ucfirst(str_replace('_', ' ', $plan->billing_cycle)) }} ({{ $plan->cycle_months }} bulan)</span>
+                                        <span class="badge badge-outline">{{ ucfirst(str_replace('_', ' ', $plan->billing_cycle)) }} </span>
                                     </td>
                                     <td>
-                                        @if($plan->discount_percentage > 0)
-                                            <span class="badge badge-success">{{ $plan->discount_percentage }}%</span>
+                                        @if((float)($plan->discount_percentage ?? 0) > 0)
+                                            <span class="badge badge-info">{{ rtrim(rtrim(number_format($plan->discount_percentage, 2, ',', '.'), '0'), ',') }}%</span>
                                         @else
                                             <span class="text-gray-400">-</span>
                                         @endif
                                     </td>
+                                    
                                     <td>
                                         <form method="POST" action="{{ route('admin.subscription-plans.toggle-status', $plan) }}" class="inline">
                                             @csrf
@@ -125,13 +139,22 @@
                                             <a href="{{ route('admin.subscription-plans.edit', $plan) }}" class="btn btn-sm btn-outline btn-warning" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form method="POST" action="{{ route('admin.subscription-plans.destroy', $plan) }}" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus paket ini?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline btn-error" title="Hapus">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
+                                            @if($plan->trashed())
+                                                <form method="POST" action="{{ route('admin.subscription-plans.restore', $plan->id) }}" class="inline" onsubmit="return confirm('Pulihkan paket ini dari arsip?')">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-success" title="Pulihkan">
+                                                        <i class="fas fa-undo"></i>
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form method="POST" action="{{ route('admin.subscription-plans.destroy', $plan) }}" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin mengarsipkan paket ini?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline btn-error" title="Arsipkan">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

@@ -4,6 +4,21 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Domain Anda</label>
         <p class="text-sm text-gray-500 mb-4">Domain sudah termasuk dalam paket subscription</p>
         
+        <!-- Opsi Domain: Baru atau Eksisting -->
+        <div class="mb-4">
+            <span class="block text-xs text-gray-500 mb-2">Opsi Domain</span>
+            <div class="flex items-center gap-4">
+                <label class="inline-flex items-center gap-2">
+                    <input type="radio" value="new" wire:model.live="domainType" class="text-blue-600 focus:ring-blue-500">
+                    <span class="text-sm text-gray-700">Daftarkan domain baru</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="radio" value="existing" wire:model.live="domainType" class="text-blue-600 focus:ring-blue-500">
+                    <span class="text-sm text-gray-700">Punya domain sendiri (existing)</span>
+                </label>
+            </div>
+        </div>
+        
         <div class="flex space-x-2">
             <div class="flex-1 relative">
                 <input type="text" 
@@ -21,25 +36,32 @@
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
-            <div class="w-32 relative">
-                <select wire:model.live="selectedTld" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <option value="com">.com</option>
-                    <option value="net">.net</option>
-                    <option value="org">.org</option>
-                    <option value="id">.id</option>
-                    <option value="co.id">.co.id</option>
-                    <option value="web.id">.web.id</option>
-                    <option value="my.id">.my.id</option>
-                    <option value="biz.id">.biz.id</option>
-                </select>
-                <!-- Loading indicator for TLD select -->
-                <div wire:loading wire:target="selectedTld" class="absolute right-8 top-1/2 transform -translate-y-1/2">
-                    <svg class="animate-spin h-3 w-3 text-blue-500" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+            <div class="flex-1">
+                <span class="block text-xs text-gray-500 mb-2">Pilih TLD</span>
+                <div class="flex flex-wrap gap-2 items-center">
+                    @php($tlds = ['com','net','org','id','co.id'])
+                    @foreach($tlds as $tld)
+                        <label class="inline-flex items-center gap-2 px-2 py-1 border rounded-md">
+                            <input type="radio" value="{{ $tld }}" wire:model.live="selectedTld" class="text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm">.{{ $tld }}</span>
+                            @if(isset($tldPrices[$tld]))
+                                <span class="text-xs text-gray-600">Rp {{ number_format($tldPrices[$tld], 0, ',', '.') }}/th</span>
+                            @endif
+                        </label>
+                    @endforeach
+                    <!-- Loading indicator for TLD radio group -->
+                    <div wire:loading wire:target="selectedTld" class="ml-2">
+                        <svg class="animate-spin h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
                 </div>
+                @if($this->selectedTldPrice)
+                    <div class="text-xs text-gray-600 mt-2">
+                        Harga TLD {{ '.' . $selectedTld }}: Rp {{ number_format($this->selectedTldPrice, 0, ',', '.') }} / tahun
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -66,10 +88,20 @@
         </div>
     @endif
 
-    <!-- Domain Availability Result -->
+    <!-- Domain Availability / Info Result -->
     <div wire:loading.remove wire:target="checkDomainAvailability">
-        @if($domainResult && !$isChecking)
-            @if($domainResult['available'])
+        @if(!$isChecking)
+            @if($domainType === 'existing' && $selectedDomain)
+                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z" />
+                        </svg>
+                        <span class="text-blue-800 font-medium">Menggunakan domain existing: {{ $selectedDomain }}</span>
+                    </div>
+                    <div class="text-sm text-blue-700">Silakan arahkan nameserver ke server Gawe. Pendaftaran domain baru tidak dilakukan.</div>
+                </div>
+            @elseif($domainResult && $domainResult['available'])
                 <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div class="flex items-center space-x-2">
                         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,11 +109,9 @@
                         </svg>
                         <span class="text-green-800 font-medium">{{ $selectedDomain }} tersedia!</span>
                     </div>
-                    <div class="mt-2 text-sm text-green-700">
-                        Domain ini akan didaftarkan untuk Anda (sudah termasuk dalam paket)
-                    </div>
+                    <div class="mt-2 text-sm text-green-700">Domain ini akan didaftarkan untuk Anda (sudah termasuk dalam paket)</div>
                 </div>
-            @else
+            @elseif($domainResult && !$domainResult['available'])
                 <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <div class="flex items-center space-x-2 mb-3">
                         <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,31 +119,37 @@
                         </svg>
                         <span class="text-yellow-800 font-medium">{{ $selectedDomain }} sudah terdaftar</span>
                     </div>
-                    <div class="text-sm text-yellow-700 mb-3">
-                        Domain ini sudah dimiliki oleh orang lain. Jika Anda memiliki domain ini, silakan centang kotak di bawah:
+                    <div class="text-sm text-yellow-700 mb-3">Domain ini sudah dimiliki oleh orang lain.
+                        @if($domainType === 'new')
+                            Jika Anda memiliki domain ini, silakan centang kotak di bawah.
+                        @else
+                            Anda memilih opsi domain existing di atas.
+                        @endif
                     </div>
-                    <label class="flex items-center space-x-2">
-                        <input type="checkbox" 
-                               wire:model.live="ownDomain"
-                               wire:change="updateSession"
-                               onchange="handleOwnDomainChange(this)"
-                               class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                        <span class="text-sm text-yellow-800">Ya, saya memiliki domain ini dan akan mengarahkan nameserver ke server Gawe</span>
-                    </label>
+                    @if($domainType === 'new')
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" 
+                                   wire:model.live="ownDomain"
+                                   wire:change="updateSession"
+                                   onchange="handleOwnDomainChange(this)"
+                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                            <span class="text-sm text-yellow-800">Ya, saya memiliki domain ini dan akan mengarahkan nameserver ke server Gawe</span>
+                        </label>
+                    @endif
                 </div>
             @endif
         @endif
     </div>
 
     <!-- Selected Domain Summary -->
-    @if($selectedDomain && $domainResult)
+    @if($selectedDomain)
         <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 class="font-medium text-blue-900 mb-2">Domain Terpilih:</h4>
             <div class="text-blue-800">
                 {{ $selectedDomain }}
-                @if(!$domainResult['available'] && $ownDomain)
+                @if($domainType === 'existing')
                     <span class="text-sm">(Domain Existing - Anda akan mengarahkan nameserver)</span>
-                @elseif($domainResult['available'])
+                @elseif($domainResult && $domainResult['available'])
                     <span class="text-sm">(Domain Baru - Akan didaftarkan)</span>
                 @endif
             </div>
@@ -134,7 +170,7 @@ function handleOwnDomainChange(checkbox) {
         if (!domainName) {
             const domainNamePart = '{{ $domainName }}';
             const selectedTld = '{{ $selectedTld }}';
-            domainName = domainNamePart + selectedTld;
+            domainName = domainNamePart + (selectedTld ? ('.' + selectedTld) : '');
         }
         
         console.log('Domain name from blade:', domainName);
@@ -195,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
      if (!domainName) {
          const domainNamePart = '{{ $domainName }}';
          const selectedTld = '{{ $selectedTld }}';
-         domainName = domainNamePart + selectedTld;
+         domainName = domainNamePart + (selectedTld ? ('.' + selectedTld) : '');
      }
     
     console.log('Found checkbox on load:', !!checkbox);

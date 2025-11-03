@@ -8,56 +8,44 @@
     <div class="mb-8">
         <div class="flex items-center justify-center">
             <div class="flex items-center space-x-4">
-                <!-- Step 1 -->
+                <!-- Step 1: Domain (completed) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                    <span class="ml-2 text-sm text-gray-600">Domain</span>
+                </div>
+                <div class="w-8 h-px bg-green-500"></div>
+
+                <!-- Step 2: Template (completed) -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
                     <span class="ml-2 text-sm text-gray-600">Template</span>
                 </div>
                 <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 2 -->
+
+                <!-- Step 3: Info Personal (completed) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
-                    <span class="ml-2 text-sm text-gray-600">Konfigurasi</span>
-                </div>
-                <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 3 -->
-                <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
-                    <span class="ml-2 text-sm text-gray-600">Add-ons</span>
-                </div>
-                <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 4 -->
-                <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
                     <span class="ml-2 text-sm text-gray-600">Info Personal</span>
                 </div>
                 <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 5 -->
+
+                <!-- Step 4: Paket & Add-ons (completed) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                    <span class="ml-2 text-sm text-gray-600">Paket & Add-ons</span>
+                </div>
+                <div class="w-8 h-px bg-green-500"></div>
+
+                <!-- Step 5: Ringkasan (completed) -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
                     <span class="ml-2 text-sm text-gray-600">Ringkasan</span>
                 </div>
                 <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 6 -->
+
+                <!-- Step 6: Pembayaran (active) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        6
-                    </div>
+                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">6</div>
                     <span class="ml-2 text-sm text-blue-600 font-medium">Pembayaran</span>
                 </div>
             </div>

@@ -96,6 +96,35 @@ class CartService
 - Easier testing dan maintenance
 - Clean controller code
 
+### 4. Pricing & Discount Pattern
+**Goal:** Konsolidasi perhitungan harga diskon agar konsisten di seluruh alur checkout, cart, order, dan invoice.
+
+**Implementation:**
+- Accessor pada model `SubscriptionPlan`: `discounted_price` menghitung harga akhir berdasarkan `discount_percentage`.
+- Service layer (`CartService`) selalu menggunakan `discounted_price` untuk `template_amount`/`subscriptionAmount` dan perhitungan subtotal/total.
+- Livewire `CheckoutSummaryComponent` mengambil `discounted_price` untuk kalkulasi real-time di UI.
+- Blade views (checkout summary, addons) menampilkan breakdown harga: harga asli (strikethrough), persen diskon, harga akhir.
+
+**Usage:**
+```php
+// Model accessor
+$finalPrice = $subscriptionPlan->discounted_price;
+
+// CartService calculations
+$summary['subscriptionAmount'] = $subscriptionPlan->discounted_price;
+$cart->template_amount = $subscriptionPlan->discounted_price;
+
+// Livewire component
+$this->subscriptionAmount = $this->subscriptionPlan->discounted_price;
+$this->totalAmount = $this->subscriptionAmount + $this->addonsAmount;
+```
+
+**Benefits:**
+- Satu sumber kebenaran untuk perhitungan diskon
+- Konsistensi antara backend totals dan UI
+- Meminimalkan bug akibat duplikasi logika
+- Memudahkan testing terfokus di accessor dan service layer
+
 ### 3. Livewire Component Pattern
 **Implementation:**
 - Real-time reactive components dengan comprehensive functionality

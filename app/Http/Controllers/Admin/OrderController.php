@@ -303,4 +303,43 @@ class OrderController extends Controller
         alert()->success('Success', 'Order cancelled successfully.');
         return redirect()->back();
     }
+
+    /**
+     * Bulk actions for orders (currently supports delete)
+     */
+    public function bulkAction(Request $request)
+    {
+        $validated = $request->validate([
+            'action' => 'required|in:delete',
+            'order_ids' => 'required|array|min:1',
+            'order_ids.*' => 'integer|exists:orders,id',
+        ]);
+
+        $ids = $validated['order_ids'];
+        $deleted = 0;
+        $skipped = [];
+
+        switch ($validated['action']) {
+            case 'delete':
+                $orders = Order::whereIn('id', $ids)->get();
+                foreach ($orders as $order) {
+                    // Skip deletion if order has invoices or projects
+                    if ($order->invoices()->count() > 0 || $order->projects()->count() > 0) {
+                        $skipped[] = $order->order_number;
+                        continue;
+                    }
+                    $order->delete();
+                    $deleted++;
+                }
+
+                $message = "Berhasil menghapus {$deleted} order.";
+                if (count($skipped) > 0) {
+                    $message .= " Dilewati: " . implode(', ', $skipped) . ".";
+                }
+
+                return response()->json(['success' => true, 'message' => $message]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Aksi tidak dikenal.'], 400);
+    }
 }

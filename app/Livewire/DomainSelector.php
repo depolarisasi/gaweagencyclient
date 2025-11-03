@@ -14,12 +14,15 @@ class DomainSelector extends Component
     public $domainResult = null;
     public $selectedTld = 'com';
     public $ownDomain = false;
+    public $domainType = 'new';
+    public $tldPrices = [];
 
     protected $domainService;
 
     public function boot(DomainService $domainService)
     {
         $this->domainService = $domainService;
+        $this->tldPrices = $this->domainService->getDomainPrices();
     }
 
     public function mount()
@@ -29,6 +32,7 @@ class DomainSelector extends Component
         if (!empty($domainData)) {
             $this->selectedDomain = $domainData['name'] ?? '';
             $this->ownDomain = $domainData['own_domain'] ?? false;
+            $this->domainType = $domainData['type'] ?? 'new';
             
             // Parse domain name and TLD from selected domain
             if ($this->selectedDomain) {
@@ -41,7 +45,7 @@ class DomainSelector extends Component
         }
         
         // Auto check domain availability on page load if domain name exists
-        if (!empty($this->domainName)) {
+        if (!empty($this->domainName) && $this->domainType === 'new') {
             $this->checkDomainAvailability();
         }
     }
@@ -51,7 +55,17 @@ class DomainSelector extends Component
         $this->reset(['domainResult', 'ownDomain']);
         // Auto check domain availability when domain name is changed (with minimum length)
         if (strlen($this->domainName) >= 3) {
-            $this->checkDomainAvailability();
+            if ($this->domainType === 'new') {
+                $this->checkDomainAvailability();
+            } else {
+                // For existing domain, skip WHOIS and just update session
+                $this->selectedDomain = $this->domainName . '.' . $this->selectedTld;
+                $this->domainResult = [
+                    'available' => false,
+                    'domain' => $this->selectedDomain,
+                ];
+                $this->updateSession();
+            }
         } else {
             // Clear results if domain name is too short
             $this->domainResult = null;
@@ -64,7 +78,17 @@ class DomainSelector extends Component
         $this->reset(['domainResult', 'ownDomain']);
         // Auto check domain availability when TLD is changed
         if (!empty($this->domainName) && strlen($this->domainName) >= 3) {
-            $this->checkDomainAvailability();
+            if ($this->domainType === 'new') {
+                $this->checkDomainAvailability();
+            } else {
+                // For existing domain, skip WHOIS and just update session
+                $this->selectedDomain = $this->domainName . '.' . $this->selectedTld;
+                $this->domainResult = [
+                    'available' => false,
+                    'domain' => $this->selectedDomain,
+                ];
+                $this->updateSession();
+            }
         } else {
             // Update session even if not checking
             $this->updateSession();
@@ -76,9 +100,45 @@ class DomainSelector extends Component
         $this->updateSession();
     }
 
+    public function updatedDomainType()
+    {
+        // Synchronize ownDomain with domainType for clarity
+        $this->ownDomain = ($this->domainType === 'existing');
+
+        // Reset results when switching type
+        $this->reset(['domainResult']);
+
+        if (!empty($this->domainName) && strlen($this->domainName) >= 3) {
+            if ($this->domainType === 'new') {
+                $this->checkDomainAvailability();
+            } else {
+                // For existing domain, assume already registered
+                $this->selectedDomain = $this->domainName . '.' . $this->selectedTld;
+                $this->domainResult = [
+                    'available' => false,
+                    'domain' => $this->selectedDomain,
+                ];
+                $this->updateSession();
+            }
+        } else {
+            $this->updateSession();
+        }
+    }
+
     public function checkDomainAvailability()
     {
         if (empty($this->domainName)) {
+            return;
+        }
+
+        // Skip WHOIS check for existing domain type
+        if ($this->domainType === 'existing') {
+            $this->selectedDomain = $this->domainName . '.' . $this->selectedTld;
+            $this->domainResult = [
+                'available' => false,
+                'domain' => $this->selectedDomain,
+            ];
+            $this->updateSession();
             return;
         }
 
@@ -133,8 +193,8 @@ class DomainSelector extends Component
         $domainName = $this->selectedDomain ?: ($this->domainName ? $this->domainName . '.' . $this->selectedTld : '');
         
         // Determine domain type based on availability and ownership
-        $domainType = 'new'; // default
-        if ($this->domainResult && !$this->domainResult['available'] && $this->ownDomain) {
+        $domainType = $this->domainType ?: 'new';
+        if ($this->domainType === 'new' && $this->domainResult && !$this->domainResult['available'] && $this->ownDomain) {
             $domainType = 'existing';
         }
         
@@ -143,6 +203,8 @@ class DomainSelector extends Component
             'name' => $domainName,
             'own_domain' => $this->ownDomain,
             'is_available' => $this->domainResult['available'] ?? null,
+            'tld' => $this->selectedTld,
+            'price' => $this->getSelectedTldPriceProperty(),
         ];
 
         session(['checkout.domain' => $domainData]);
@@ -159,5 +221,10 @@ class DomainSelector extends Component
     public function render()
     {
         return view('livewire.domain-selector');
+    }
+
+    public function getSelectedTldPriceProperty()
+    {
+        return $this->tldPrices[$this->selectedTld] ?? null;
     }
 }

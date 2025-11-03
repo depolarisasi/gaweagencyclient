@@ -30,8 +30,14 @@
             <div>
                 <h4 class="font-medium text-gray-900">Paket Berlangganan</h4>
                 <p class="text-sm text-gray-600">{{ $subscriptionPlan->name }} - {{ $subscriptionPlan->billing_cycle }}</p>
+                @if(($subscriptionPlan->discount_percentage ?? 0) > 0)
+                    <p class="text-xs text-green-700 mt-1">Diskon {{ number_format($subscriptionPlan->discount_percentage, 0, ',', '.') }}%</p>
+                @endif
             </div>
             <div class="text-right">
+                @if(($subscriptionPlan->discount_percentage ?? 0) > 0)
+                    <p class="text-xs text-gray-500 line-through">Rp {{ number_format($subscriptionPlan->price, 0, ',', '.') }}</p>
+                @endif
                 <p class="font-medium text-gray-900">Rp {{ number_format($subscriptionAmount, 0, ',', '.') }}</p>
             </div>
         </div>
@@ -42,13 +48,24 @@
                 <h4 class="font-medium text-gray-900">Domain</h4>
                 <p class="text-sm text-gray-600">{{ $this->domainDisplay }}</p>
                 <p class="text-xs text-gray-500">{{ ucfirst($domainInfo['type'] ?? $domainInfo['domain_type'] ?? 'unknown') }}</p>
+                @php
+                    $tldShown = $domainInfo['tld'] ?? null;
+                    if(!$tldShown) {
+                        $dn = $domainInfo['name'] ?? $domainInfo['domain_name'] ?? '';
+                        $parts = explode('.', $dn);
+                        if(count($parts) > 1) { $tldShown = implode('.', array_slice($parts, 1)); }
+                    }
+                @endphp
+                @if($tldShown)
+                    <p class="text-xs text-gray-500">TLD: {{ $tldShown }}</p>
+                @endif
             </div>
             <div class="text-right">
                 @php($type = $domainInfo['type'] ?? $domainInfo['domain_type'] ?? '')
                 @if($type === 'new')
-                    <p class="text-sm font-medium text-green-700">Included</p>
+                    <p class="text-sm font-medium text-gray-900">Rp {{ number_format($domainAmount, 0, ',', '.') }}</p>
                 @elseif($type === 'existing')
-                    <p class="text-sm text-gray-600">Domain Existing</p>
+                    <p class="text-sm text-gray-600">Tidak dikenakan biaya</p>
                 @else
                     <p class="text-sm text-gray-600">-</p>
                 @endif

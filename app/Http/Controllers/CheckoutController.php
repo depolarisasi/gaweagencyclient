@@ -103,7 +103,7 @@ class CheckoutController extends Controller
         $cart = $this->cartService->migrateFromSessionAndCookies($request);
         
         if ($request->isMethod('post')) {
-            // Handle POST request - save addons and redirect to personal-info
+            // Handle POST request - save addons and redirect to domain step
             $request->validate([
                 'selected_addons' => 'nullable|array',
                 'selected_addons.*' => 'exists:product_addons,id',
@@ -118,7 +118,7 @@ class CheckoutController extends Controller
             CheckoutCookieHelper::storeAddons($selectedAddons);
             $request->session()->put('checkout.selected_addons', $selectedAddons);
             
-            return redirect()->route('checkout.personal-info');
+            return redirect()->route('checkout.domain');
         }
         
         // Handle GET request - display addons page
@@ -147,9 +147,81 @@ class CheckoutController extends Controller
         return view('checkout.addon', compact('template', 'subscriptionPlan', 'addons', 'billingCycle'));
     }
 
+    public function domain(Request $request)
+    {
+        // Step 4: Domain - Pilih dan verifikasi domain
+        // Get cart and migrate session data if needed
+        $cart = $this->cartService->migrateFromSessionAndCookies($request);
+
+        if ($request->isMethod('post')) {
+            // Handle POST request - save domain data and redirect to personal info
+
+            // Attempt to get domain data from session first (set by Livewire DomainSelector)
+            $sessionDomain = $request->session()->get('checkout.domain');
+
+            // Fallback to hidden inputs if session not set
+            $domainType = $request->input('domain_type');
+            $domainName = $request->input('domain_name');
+            $domainTld = $request->input('domain_tld');
+            $domainPrice = $request->input('domain_price');
+
+            if (!$sessionDomain && $domainType && $domainName) {
+                $sessionDomain = [
+                    'type' => $domainType,
+                    'name' => $domainName,
+                ];
+                if ($domainTld) {
+                    $sessionDomain['tld'] = $domainTld;
+                }
+                if ($domainPrice !== null && $domainPrice !== '') {
+                    $sessionDomain['price'] = is_numeric($domainPrice) ? (float) $domainPrice : $domainPrice;
+                }
+            }
+
+            // Validate domain data presence
+            if (empty($sessionDomain) || empty($sessionDomain['type']) || empty($sessionDomain['name'])) {
+                return back()->withErrors('Silakan pilih dan verifikasi domain terlebih dahulu.');
+            }
+
+            // Normalize keys and update cart
+            $domainInfo = [
+                'type' => $sessionDomain['type'],
+                'name' => $sessionDomain['name'],
+            ];
+            // Include optional fields if present
+            foreach (['tld', 'price', 'own_domain', 'is_available'] as $optKey) {
+                if (array_key_exists($optKey, $sessionDomain)) {
+                    $domainInfo[$optKey] = $sessionDomain[$optKey];
+                }
+            }
+
+            $this->cartService->updateDomainData($cart, $domainInfo);
+
+            // Store in cookies for backward compatibility
+            CheckoutCookieHelper::storeDomain($domainInfo);
+
+            return redirect()->route('checkout.personal-info')->with('success', 'Domain berhasil disimpan.');
+        }
+
+        // Handle GET request - display domain selection page
+        // Check if template is selected
+        if (!$cart->template_id) {
+            return redirect()->route('checkout.index')->withErrors('Template belum dipilih.');
+        }
+
+        // Check if subscription plan is selected
+        if (!$cart->subscription_plan_id) {
+            return redirect()->route('checkout.configure')->withErrors('Silakan pilih paket berlangganan terlebih dahulu.');
+        }
+
+        $template = $cart->template;
+
+        return view('checkout.domain', compact('template'));
+    }
+
     public function personalInfo(Request $request)
     {
-        // Step 4: Personal Info - Domain and user data
+        // Step 5: Personal Info - Data pengguna
         
         // Get cart and migrate session data if needed
         $cart = $this->cartService->migrateFromSessionAndCookies($request);
@@ -159,8 +231,6 @@ class CheckoutController extends Controller
             
             // Debug logging
             \Log::info('Personal Info POST data:', [
-                'domain_name' => $request->domain_name,
-                'domain_type' => $request->domain_type,
                 'all_data' => $request->all()
             ]);
             
@@ -168,8 +238,7 @@ class CheckoutController extends Controller
             if (auth()->check()) {
                 // For logged-in users, skip password validation
                 $request->validate([
-                    'domain_name' => 'required|string|max:255',
-                    'domain_type' => 'required|in:new,existing',
+                    // No domain validation here; domain is handled in previous step
                 ]);
 
                 $customerInfo = [
@@ -187,8 +256,6 @@ class CheckoutController extends Controller
                     'email' => 'required|email|max:255',
                     'phone' => 'required|string|max:20',
                     'password' => 'required|string|min:8|confirmed',
-                    'domain_name' => 'required|string|max:255',
-                    'domain_type' => 'required|in:new,existing',
                 ]);
 
                 $customerInfo = [
@@ -201,20 +268,11 @@ class CheckoutController extends Controller
                 ];
             }
             
-            $domainInfo = [
-                'domain_name' => $request->domain_name,
-                'domain_type' => $request->domain_type,
-                'type' => $request->domain_type, // Add normalized key for consistency
-                'name' => $request->domain_name, // Add normalized key for consistency
-            ];
-
-            // Update cart with customer info and domain data
+            // Update cart with customer info only (domain handled in previous step)
             $this->cartService->updateCustomerInfo($cart, $customerInfo);
-            $this->cartService->updateDomainData($cart, $domainInfo);
 
             // Store in cookies for backward compatibility
             CheckoutCookieHelper::storeCustomerInfo($customerInfo);
-            CheckoutCookieHelper::storeDomain($domainInfo);
             
             return redirect()->route('checkout.summary');
         }
@@ -368,6 +426,7 @@ class CheckoutController extends Controller
             
             $subscriptionAmount = $order->subscription_amount;
             $addonsAmount = $order->addons_amount;
+            $domainAmount = $order->domain_amount ?? 0;
             $totalAmount = $order->total_amount;
         } else {
             // Get cart summary with all calculated totals
@@ -382,6 +441,7 @@ class CheckoutController extends Controller
             
             $subscriptionAmount = $summary['subscription_amount'];
             $addonsAmount = $summary['addons_amount'];
+            $domainAmount = $summary['domain_amount'];
             $totalAmount = $summary['total_amount'];
         }
         
@@ -414,6 +474,7 @@ class CheckoutController extends Controller
             'addons' => $addons,
             'subscriptionAmount' => $subscriptionAmount,
             'addonsAmount' => $addonsAmount,
+            'domainAmount' => $domainAmount ?? 0,
             'totalAmount' => $totalAmount
         ]);
 
@@ -427,6 +488,7 @@ class CheckoutController extends Controller
             'addons',
             'subscriptionAmount',
             'addonsAmount',
+            'domainAmount',
             'totalAmount',
             'totalAmountWithFees',
             'order',

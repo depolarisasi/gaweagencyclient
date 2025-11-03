@@ -8,56 +8,44 @@
     <div class="mb-8">
         <div class="flex items-center justify-center">
             <div class="flex items-center space-x-4">
-                <!-- Step 1 -->
+                <!-- Langkah 1: Domain (selesai) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                    <span class="ml-2 text-sm text-gray-600">Domain</span>
+                </div>
+                <div class="w-8 h-px bg-green-500"></div>
+                
+                <!-- Langkah 2: Template (selesai) -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
                     <span class="ml-2 text-sm text-gray-600">Template</span>
                 </div>
                 <div class="w-8 h-px bg-green-500"></div>
                 
-                <!-- Step 2 -->
+                <!-- Langkah 3: Info Personal (selesai) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
-                    <span class="ml-2 text-sm text-gray-600">Konfigurasi</span>
-                </div>
-                <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 3 -->
-                <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
-                    <span class="ml-2 text-sm text-gray-600">Add-ons</span>
-                </div>
-                <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 4 -->
-                <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
                     <span class="ml-2 text-sm text-gray-600">Info Personal</span>
                 </div>
                 <div class="w-8 h-px bg-green-500"></div>
                 
-                <!-- Step 5 -->
+                <!-- Langkah 4: Paket & Add-ons (selesai) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                    <span class="ml-2 text-sm text-gray-600">Paket & Add-ons</span>
+                </div>
+                <div class="w-8 h-px bg-green-500"></div>
+                
+                <!-- Langkah 5: Ringkasan (selesai) -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
                     <span class="ml-2 text-sm text-gray-600">Ringkasan</span>
                 </div>
                 <div class="w-8 h-px bg-green-500"></div>
                 
-                <!-- Step 6 -->
+                <!-- Langkah 6: Pembayaran (aktif) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        6
-                    </div>
+                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">6</div>
                     <span class="ml-2 text-sm text-blue-600 font-medium">Pembayaran</span>
                 </div>
             </div>
@@ -383,12 +371,23 @@
                         
                         @if(isset($domainInfo) && $domainInfo)
                             <div class="flex justify-between items-center py-2">
-                                <span class="text-gray-600">Domain: {{ $domainInfo['domain_name'] ?? 'N/A' }}</span>
+                                <span class="text-gray-600">Domain: {{ $domainInfo['domain_name'] ?? $domainInfo['name'] ?? 'N/A' }}</span>
                                 @php($type = $domainInfo['domain_type'] ?? $domainInfo['type'] ?? 'unknown')
                                 @if($type === 'new')
-                                    <span class="font-semibold text-green-600">Included</span>
+                                    @php
+                                        $tldShown = $domainInfo['tld'] ?? null;
+                                        if(!$tldShown) {
+                                            $dn = $domainInfo['domain_name'] ?? $domainInfo['name'] ?? '';
+                                            $parts = explode('.', $dn);
+                                            if(count($parts) > 1) { $tldShown = implode('.', array_slice($parts, 1)); }
+                                        }
+                                    @endphp
+                                    <span class="font-semibold">Rp {{ number_format($domainAmount ?? 0, 0, ',', '.') }}</span>
+                                    @if($tldShown)
+                                        <span class="ml-2 text-xs text-gray-500">TLD: {{ $tldShown }}</span>
+                                    @endif
                                 @elseif($type === 'existing')
-                                    <span class="font-semibold text-green-600">Domain Existing</span>
+                                    <span class="font-semibold text-gray-600">Tidak dikenakan biaya</span>
                                 @else
                                     <span class="font-semibold text-gray-500">-</span>
                                 @endif
@@ -418,6 +417,13 @@
                             <div class="flex justify-between items-center py-1 text-sm text-gray-600">
                                 <span>Subtotal Add-ons</span>
                                 <span>Rp {{ number_format($addonsAmount, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
+
+                        @if(isset($domainAmount) && $domainAmount > 0)
+                            <div class="flex justify-between items-center py-1 text-sm text-gray-600">
+                                <span>Subtotal Domain</span>
+                                <span>Rp {{ number_format($domainAmount, 0, ',', '.') }}</span>
                             </div>
                         @endif
                         

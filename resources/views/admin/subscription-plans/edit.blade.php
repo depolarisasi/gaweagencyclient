@@ -140,16 +140,6 @@
                 <!-- Settings -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Diskon (%)</label>
-                        <input type="number" name="discount_percentage" value="{{ old('discount_percentage', $subscriptionPlan->discount_percentage) }}" 
-                               class="input input-bordered w-full @error('discount_percentage') input-error @enderror" 
-                               placeholder="0" min="0" max="100" step="0.01">
-                        @error('discount_percentage')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Urutan Tampil</label>
                         <input type="number" name="sort_order" value="{{ old('sort_order', $subscriptionPlan->sort_order) }}" 
                                class="input input-bordered w-full @error('sort_order') input-error @enderror" 
@@ -178,6 +168,17 @@
                                        class="checkbox checkbox-warning">
                             </label>
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Diskon (%)</label>
+                        <input type="number" name="discount_percentage" value="{{ old('discount_percentage', $subscriptionPlan->discount_percentage) }}"
+                               class="input input-bordered w-full @error('discount_percentage') input-error @enderror"
+                               placeholder="0" min="0" max="100" step="0.01">
+                        <p class="text-sm text-gray-500 mt-1">Persentase diskon untuk paket ini (0-100).</p>
+                        @error('discount_percentage')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 

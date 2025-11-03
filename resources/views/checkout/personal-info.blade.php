@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Checkout - Informasi Personal & Domain')
+@section('title', 'Checkout - Informasi Personal')
 
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
@@ -9,47 +9,39 @@
         <div class="mb-8">
             <div class="flex items-center justify-center">
                 <div class="flex items-center space-x-4">
-                    <!-- Step 1 -->
+                    <!-- Langkah 1: Domain (selesai) -->
                     <div class="flex items-center">
-                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                            ✓
-                        </div>
+                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                        <span class="ml-2 text-sm font-medium text-gray-900">Domain</span>
+                    </div>
+                    
+                    <div class="w-8 h-px bg-gray-300"></div>
+                    
+                    <!-- Langkah 2: Template (selesai) -->
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
                         <span class="ml-2 text-sm font-medium text-gray-900">Template</span>
                     </div>
                     
                     <div class="w-8 h-px bg-gray-300"></div>
                     
-                    <!-- Step 2 -->
+                    <!-- Langkah 3: Info Personal (aktif) -->
                     <div class="flex items-center">
-                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                            ✓
-                        </div>
-                        <span class="ml-2 text-sm font-medium text-gray-900">Konfigurasi</span>
-                    </div>
-                    
-                    <div class="w-8 h-px bg-gray-300"></div>
-                    
-                    <!-- Step 3 -->
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                            ✓
-                        </div>
-                        <span class="ml-2 text-sm font-medium text-gray-900">Add-ons</span>
+                        <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
+                        <span class="ml-2 text-sm font-medium text-blue-600">Info Personal</span>
                     </div>
                     
                     <div class="w-8 h-px bg-green-500"></div>
                     
-                    <!-- Step 4 -->
+                    <!-- Langkah 4: Paket & Add-ons -->
                     <div class="flex items-center">
-                        <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                            4
-                        </div>
-                        <span class="ml-2 text-sm font-medium text-blue-600">Info Personal</span>
+                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">4</div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">Paket & Add-ons</span>
                     </div>
                     
                     <div class="w-8 h-px bg-gray-300"></div>
                     
-                    <!-- Step 5 -->
+                    <!-- Langkah 5: Ringkasan -->
                     <div class="flex items-center">
                         <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">
                             5
@@ -59,7 +51,7 @@
                     
                     <div class="w-8 h-px bg-gray-300"></div>
                     
-                    <!-- Step 6 -->
+                    <!-- Langkah 6: Pembayaran -->
                     <div class="flex items-center">
                         <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">
                             6
@@ -73,12 +65,37 @@
         <!-- Main Content -->
         <div class="bg-white shadow-lg rounded-lg overflow-hidden">
             <div class="px-6 py-4 bg-blue-50 border-b border-blue-100">
-                <h1 class="text-2xl font-bold text-gray-900">Informasi Personal & Domain</h1>
-                <p class="text-gray-600 mt-1">Masukkan informasi personal Anda dan pilih opsi domain</p>
+                <h1 class="text-2xl font-bold text-gray-900">Informasi Personal</h1>
+                <p class="text-gray-600 mt-1">Masukkan informasi personal Anda</p>
             </div>
 
             <form action="{{ route('checkout.personal-info.post') }}" method="POST" class="p-6 space-y-8">
                 @csrf
+
+                <!-- Alert: Validation Errors -->
+                @if($errors->any())
+                    <div class="alert alert-error">
+                        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M4.938 19h14.124c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.206 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <div>
+                            @foreach($errors->all() as $error)
+                                <div>{{ $error }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Hint: Domain already selected in previous step -->
+                <div class="alert alert-info">
+                    <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 18a9 9 0 110-18 9 9 0 010 18z"></path>
+                    </svg>
+                    <div>
+                        <div class="font-medium">Catatan</div>
+                        <div class="text-sm">Data domain telah dipilih pada langkah sebelumnya. Jika ingin mengubah domain, klik tombol Kembali untuk kembali ke langkah Domain.</div>
+                    </div>
+                </div>
 
                 <!-- Template Info -->
                 @if($template)
@@ -242,185 +259,42 @@
                     @endauth
                 </div>
 
-                <!-- Domain Selection -->
-                <div class="space-y-6 p-6">
-                    <h3 class="text-lg font-medium text-gray-900">Pilihan Domain</h3>
+                <div class="flex justify-between pt-6">
+                    <a href="{{ route('checkout.domain') }}" 
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                        Kembali
+                    </a>
                     
-                    <div class="bg-white p-6 rounded-lg border border-gray-200">
-                        @livewire('domain-selector')
-                    </div>
-
-                    <!-- Hidden inputs for domain data -->
-                    @php
-                         $domainData = session('checkout.domain', []);
-                         $domainType = $domainData['type'] ?? '';
-                         $domainName = $domainData['name'] ?? '';
-                         
-                         // Debug: Log session data to browser console
-                         $debugData = json_encode([
-                             'sessionData' => $domainData,
-                             'domainType' => $domainType,
-                             'domainName' => $domainName
-                         ]);
-                     @endphp
-                    
-                    <input type="hidden" name="domain_type" value="{{ $domainType }}" id="domain_type_input">
-                    <input type="hidden" name="domain_name" value="{{ $domainName }}" id="domain_name_input">
-
-                    <div class="flex justify-between pt-6">
-                        <a href="{{ route('checkout.configure') }}" 
-                           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                            Kembali
-                        </a>
-                        
-                        <button type="submit" 
-                                class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            Lanjutkan ke Billing
-                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </button>
-                    </div>
+                    <button type="submit" 
+                            class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Lanjutkan ke Ringkasan
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
             </form>
+
+            <!-- Session Toasts -->
+            @if(session('success'))
+                <div class="toast toast-top toast-end">
+                    <div class="alert alert-success">
+                        <span>{{ session('success') }}</span>
+                    </div>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="toast toast-top toast-end">
+                    <div class="alert alert-error">
+                        <span>{{ session('error') }}</span>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>
 
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Debug: Log session data
-    console.log('Session data on page load:', {!! $debugData !!});
-    
-    let domainDataReady = false;
-    
-    // Function to check if domain data is valid
-    function isDomainDataValid() {
-        const domainTypeInput = document.getElementById('domain_type_input');
-        const domainNameInput = document.getElementById('domain_name_input');
-        
-        if (!domainTypeInput || !domainNameInput) {
-            return false;
-        }
-        
-        const domainType = domainTypeInput.value;
-        const domainName = domainNameInput.value;
-        
-        return domainType && domainName && domainName.trim() !== '';
-    }
-    
-    // Function to update hidden inputs
-    window.updateHiddenInputs = function(data) {
-        console.log('updateHiddenInputs called with data:', data);
-        const domainTypeInput = document.getElementById('domain_type_input');
-        const domainNameInput = document.getElementById('domain_name_input');
-        
-        console.log('Found elements:', {
-            domainTypeInput: !!domainTypeInput,
-            domainNameInput: !!domainNameInput
-        });
-        
-        if (domainTypeInput && domainNameInput && data) {
-            domainTypeInput.value = data.type || '';
-            domainNameInput.value = data.name || '';
-            
-            // Mark domain data as ready if both fields are filled
-            domainDataReady = domainTypeInput.value && domainNameInput.value;
-            
-            console.log('Updated hidden inputs:', {
-                type: domainTypeInput.value,
-                name: domainNameInput.value,
-                ready: domainDataReady,
-                domainTypeValue: domainTypeInput.value,
-                domainNameValue: domainNameInput.value
-            });
-        } else {
-            console.log('Failed to update hidden inputs - missing elements or data');
-        }
-    }
-    
-    // Initialize domain data from existing values
-    if (isDomainDataValid()) {
-        domainDataReady = true;
-        console.log('Domain data already valid on page load');
-    }
-    
-    // Listen for domain updates from Livewire component
-    document.addEventListener('livewire:init', () => {
-        console.log('Livewire initialized, setting up domainUpdated listener');
-        Livewire.on('domainUpdated', (data) => {
-            console.log('Livewire domainUpdated event received:', data);
-            window.lastDomainUpdateData = data;
-            window.updateHiddenInputs(data);
-        });
-    });
-
-    // Listen for browser custom events (single listener)
-    window.addEventListener('domainUpdated', function(event) {
-        console.log('Browser domainUpdated event received:', event.detail);
-        
-        // Store event data for debugging
-        window.lastDomainUpdateData = event.detail;
-        
-        // Update hidden inputs with the event data
-        window.updateHiddenInputs(event.detail);
-    });
-    
-    // Form submission validation
-    const form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            // Double-check domain data validity
-            if (!isDomainDataValid()) {
-                console.error('Missing domain data on form submission');
-                alert('Silakan pilih domain terlebih dahulu. Pastikan Anda telah memilih jenis domain dan mengisi nama domain.');
-                e.preventDefault();
-                return false;
-            }
-            
-            // Additional validation for form fields
-            // Check if user is logged in by looking for hidden input
-            const isLoggedIn = document.querySelector('input[name="user_logged_in"]');
-            
-            let requiredFields = ['full_name', 'email', 'phone'];
-            
-            // Only validate password fields for guest users
-            if (!isLoggedIn) {
-                requiredFields.push('password', 'password_confirmation');
-            }
-            
-            for (let fieldName of requiredFields) {
-                const field = document.querySelector(`input[name="${fieldName}"]`);
-                if (!field || !field.value.trim()) {
-                    alert(`Silakan isi field ${fieldName.replace('_', ' ')}`);
-                    e.preventDefault();
-                    return false;
-                }
-            }
-            
-            // Password confirmation check (only for guest users)
-            if (!isLoggedIn) {
-                const password = document.querySelector('input[name="password"]');
-                const passwordConfirmation = document.querySelector('input[name="password_confirmation"]');
-                
-                if (password && passwordConfirmation) {
-                    if (password.value !== passwordConfirmation.value) {
-                        alert('Password dan konfirmasi password tidak sama');
-                        e.preventDefault();
-                        return false;
-                    }
-                }
-            }
-            
-            console.log('Form validation passed, submitting...');
-            return true;
-        });
-    }
-});
-</script>
-@endpush

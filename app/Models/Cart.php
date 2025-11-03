@@ -101,8 +101,38 @@ class Cart extends Model
     public function calculateTotals(): void
     {
         $this->addons_amount = $this->cartAddons->sum('price');
-        // Domain price is included in subscription; exclude domain_amount from subtotal
-        $this->subtotal = $this->template_amount + $this->addons_amount;
+
+        // Calculate domain amount if applicable (only for new domain registrations)
+        $domainAmount = 0.0;
+        try {
+            $domainData = $this->domain_data ?? [];
+            $domainType = $domainData['type'] ?? $domainData['domain_type'] ?? null;
+            if ($domainType === 'new') {
+                if (isset($domainData['price']) && is_numeric($domainData['price'])) {
+                    $domainAmount = (float) $domainData['price'];
+                } else {
+                    $tld = $domainData['tld'] ?? null;
+                    $domainName = $domainData['name'] ?? $domainData['domain_name'] ?? '';
+                    if (!$tld && $domainName) {
+                        $parts = explode('.', $domainName);
+                        if (count($parts) > 1) {
+                            $tld = implode('.', array_slice($parts, 1));
+                        }
+                    }
+                    $domainService = app(\App\Services\DomainService::class);
+                    $prices = $domainService->getDomainPrices();
+                    $domainAmount = $tld && isset($prices[$tld]) ? (float) $prices[$tld] : 150000.0;
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Cart::calculateTotals failed to calculate domain amount', [
+                'error' => $e->getMessage(),
+            ]);
+            $domainAmount = 0.0;
+        }
+
+        $this->domain_amount = $domainAmount;
+        $this->subtotal = ($this->template_amount ?? 0) + ($this->addons_amount ?? 0) + $this->domain_amount;
         $this->customer_fee = $this->subtotal * 0.03; // 3% customer fee
         $this->total_amount = $this->subtotal + $this->customer_fee;
     }

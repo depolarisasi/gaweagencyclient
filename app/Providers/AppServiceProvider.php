@@ -36,6 +36,12 @@ class AppServiceProvider extends ServiceProvider
                 if (isset($settings['company_phone'])) {
                     config(['app.company_phone' => $settings['company_phone']]);
                 }
+                if (isset($settings['company_address'])) {
+                    config(['app.company_address' => $settings['company_address']]);
+                }
+                if (isset($settings['company_website'])) {
+                    config(['app.company_website' => $settings['company_website']]);
+                }
 
                 // Tripay configuration
                 $tripayOverrides = [];

@@ -113,7 +113,7 @@ class CartService
             // Set template_amount based on subscription plan price
             $subscriptionPlan = SubscriptionPlan::find($subscriptionPlanId);
             if ($subscriptionPlan) {
-                $cart->template_amount = $subscriptionPlan->price ?? 0;
+                $cart->template_amount = $subscriptionPlan->discounted_price ?? ($subscriptionPlan->price ?? 0);
             }
             
             $hasChanges = true;
@@ -199,8 +199,8 @@ class CartService
         $cart->subscription_plan_id = $subscriptionPlanId;
         $cart->billing_cycle = $billingCycle;
         
-        // Set template_amount based on subscription plan price
-        $cart->template_amount = $subscriptionPlan->price ?? 0;
+        // Set template_amount based on subscription plan discounted price
+        $cart->template_amount = $subscriptionPlan->discounted_price ?? ($subscriptionPlan->price ?? 0);
         
         $cart->calculateTotals();
         $cart->save();
@@ -276,11 +276,53 @@ class CartService
         $subscriptionPlan = $cart->subscriptionPlan;
         $addons = $cart->addons;
 
-        // Calculate subscription amount based on subscription plan and billing cycle
+        // Calculate subscription amount based on subscription plan and billing cycle (apply discount)
         $subscriptionAmount = 0;
         if ($subscriptionPlan) {
-            $subscriptionAmount = $subscriptionPlan->price;
+            $subscriptionAmount = $subscriptionPlan->discounted_price ?? $subscriptionPlan->price;
         }
+
+        // Calculate domain amount (only for new domain registrations)
+        $domainAmount = 0;
+        try {
+            $domainData = $cart->domain_data ?? [];
+            $domainType = $domainData['type'] ?? $domainData['domain_type'] ?? null;
+            if ($domainType === 'new') {
+                // Prefer explicit price if available
+                if (isset($domainData['price']) && is_numeric($domainData['price'])) {
+                    $domainAmount = (float) $domainData['price'];
+                } else {
+                    // Derive price from TLD
+                    $tld = $domainData['tld'] ?? null;
+                    $domainName = $domainData['name'] ?? $domainData['domain_name'] ?? '';
+                    if (!$tld && $domainName) {
+                        // Extract TLD from domain name (supports multi-level e.g. co.id)
+                        $parts = explode('.', $domainName);
+                        if (count($parts) > 1) {
+                            // Handle multi-part TLDs (e.g., co.id)
+                            $tld = implode('.', array_slice($parts, 1));
+                        }
+                    }
+
+                    // Get price mapping from DomainService
+                    $domainService = app(\App\Services\DomainService::class);
+                    $prices = $domainService->getDomainPrices();
+                    $domainAmount = $tld && isset($prices[$tld]) ? (float) $prices[$tld] : 150000.0;
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to calculate domain amount in CartService::getCartSummary', [
+                'error' => $e->getMessage(),
+            ]);
+            $domainAmount = 0;
+        }
+
+        // Recalculate cart financials including domain amount
+        $templateAmount = $cart->template_amount ?? 0;
+        $addonsAmount = $cart->addons_amount ?? 0;
+        $subtotal = $templateAmount + $addonsAmount + $domainAmount;
+        $customerFee = $subtotal * 0.03; // 3% customer fee
+        $totalAmount = $subtotal + $customerFee;
 
         return [
             'cart' => $cart,
@@ -290,12 +332,12 @@ class CartService
             'customer_info' => $cart->configuration['customer_info'] ?? null,
             'domain_data' => $cart->domain_data,
             'subscription_amount' => $subscriptionAmount,
-            'addons_amount' => $cart->addons_amount,
-            'domain_amount' => 0,
-            'template_amount' => $cart->template_amount,
-            'subtotal' => $cart->subtotal,
-            'customer_fee' => $cart->customer_fee,
-            'total_amount' => $cart->total_amount,
+            'addons_amount' => $addonsAmount,
+            'domain_amount' => $domainAmount,
+            'template_amount' => $templateAmount,
+            'subtotal' => $subtotal,
+            'customer_fee' => $customerFee,
+            'total_amount' => $totalAmount,
         ];
     }
 

@@ -45,56 +45,44 @@
     <div class="mb-8">
         <div class="flex items-center justify-center">
             <div class="flex items-center space-x-4">
-                <!-- Step 1 -->
+                <!-- Step 1: Domain (completed) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                    <span class="ml-2 text-sm text-gray-600">Domain</span>
+                </div>
+                <div class="w-8 h-px bg-green-500"></div>
+
+                <!-- Step 2: Template (completed) -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
                     <span class="ml-2 text-sm text-gray-600">Template</span>
                 </div>
                 <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 2 -->
+
+                <!-- Step 3: Info Personal (completed) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        ✓
-                    </div>
-                    <span class="ml-2 text-sm text-gray-600">Konfigurasi</span>
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">✓</div>
+                    <span class="ml-2 text-sm text-gray-600">Info Personal</span>
                 </div>
                 <div class="w-8 h-px bg-green-500"></div>
-                
-                <!-- Step 3 -->
+
+                <!-- Step 4: Paket & Add-ons (active) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                        3
-                    </div>
-                    <span class="ml-2 text-sm text-blue-600 font-medium">Add-ons</span>
+                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">4</div>
+                    <span class="ml-2 text-sm text-blue-600 font-medium">Paket & Add-ons</span>
                 </div>
                 <div class="w-8 h-px bg-gray-300"></div>
-                
-                <!-- Step 4 -->
+
+                <!-- Step 5: Ringkasan (upcoming) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">
-                        4
-                    </div>
-                    <span class="ml-2 text-sm text-gray-400">Info Personal</span>
-                </div>
-                <div class="w-8 h-px bg-gray-300"></div>
-                
-                <!-- Step 5 -->
-                <div class="flex items-center">
-                    <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">
-                        5
-                    </div>
+                    <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">5</div>
                     <span class="ml-2 text-sm text-gray-400">Ringkasan</span>
                 </div>
                 <div class="w-8 h-px bg-gray-300"></div>
-                
-                <!-- Step 6 -->
+
+                <!-- Step 6: Pembayaran (upcoming) -->
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">
-                        6
-                    </div>
+                    <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">6</div>
                     <span class="ml-2 text-sm text-gray-400">Pembayaran</span>
                 </div>
             </div>
@@ -159,9 +147,17 @@
                     <div>
                         <p class="text-blue-800 font-medium">{{ $subscriptionPlan->name }}</p>
                         <p class="text-blue-600 text-sm">{{ $subscriptionPlan->billing_cycle }}</p>
+                        @if(($subscriptionPlan->discount_percentage ?? 0) > 0)
+                            <p class="text-xs text-green-700 mt-1">Diskon {{ number_format($subscriptionPlan->discount_percentage, 0, ',', '.') }}%</p>
+                        @endif
                     </div>
                     <div class="text-right">
-                        <p class="text-blue-900 font-bold text-lg">Rp {{ number_format($subscriptionPlan->price, 0, ',', '.') }}</p>
+                        @if(($subscriptionPlan->discount_percentage ?? 0) > 0)
+                            <p class="text-xs text-blue-600 line-through">Rp {{ number_format($subscriptionPlan->price, 0, ',', '.') }}</p>
+                            <p class="text-blue-900 font-bold text-lg">Rp {{ number_format($subscriptionPlan->discounted_price ?? $subscriptionPlan->price, 0, ',', '.') }}</p>
+                        @else
+                            <p class="text-blue-900 font-bold text-lg">Rp {{ number_format($subscriptionPlan->price, 0, ',', '.') }}</p>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -134,6 +134,9 @@
                     <table class="table table-zebra w-full">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="w-10">
+                                    <input type="checkbox" id="selectAllOrders" onclick="toggleSelectAll(this)">
+                                </th>
                                 <th class="text-left font-semibold text-gray-700">Order Details</th>
                                 <th class="text-left font-semibold text-gray-700">Customer</th>
                                 <th class="text-left font-semibold text-gray-700">Product/Service</th>
@@ -146,6 +149,9 @@
                         <tbody>
                             @forelse($orders as $order)
                             <tr class="hover:bg-gray-50">
+                                <td>
+                                    <input type="checkbox" class="order-checkbox" value="{{ $order->id }}" onclick="updateBulkActions()">
+                                </td>
                                 <td>
                                     <div>
                                         <div class="font-semibold text-gray-900">{{ $order->order_number }}</div>
@@ -252,7 +258,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-8">
+                                <td colspan="8" class="text-center py-8">
                                     <div class="flex flex-col items-center">
                                         <i class="fas fa-shopping-cart text-gray-300 text-4xl mb-4"></i>
                                         <p class="text-gray-500 text-lg">No orders found</p>
@@ -273,6 +279,119 @@
                 @endif
             </div>
         </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+    let selectedOrderIds = [];
+
+    function toggleSelectAll(master) {
+        const checkboxes = document.querySelectorAll('.order-checkbox');
+        checkboxes.forEach(cb => { cb.checked = master.checked; });
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        selectedOrderIds = Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
+        const bar = document.getElementById('bulkActionsBar');
+        const countEl = document.getElementById('selectedCount');
+        if (!bar || !countEl) return;
+        if (selectedOrderIds.length > 0) {
+            bar.style.display = 'flex';
+            countEl.textContent = selectedOrderIds.length;
+        } else {
+            bar.style.display = 'none';
+            countEl.textContent = '0';
+            const select = document.getElementById('bulkActionSelect');
+            if (select) select.value = '';
+        }
+    }
+
+    function clearSelection() {
+        document.querySelectorAll('.order-checkbox').forEach(cb => cb.checked = false);
+        const master = document.getElementById('selectAllOrders');
+        if (master) master.checked = false;
+        updateBulkActions();
+    }
+
+    function executeBulkAction() {
+        const action = document.getElementById('bulkActionSelect').value;
+        if (!action) {
+            Swal.fire('Aksi diperlukan', 'Silakan pilih aksi terlebih dahulu.', 'warning');
+            return;
+        }
+        if (selectedOrderIds.length === 0) {
+            Swal.fire('Tidak ada pilihan', 'Pilih minimal satu order.', 'warning');
+            return;
+        }
+        if (action === 'delete') {
+            Swal.fire({
+                title: 'Hapus Order Terpilih?',
+                text: 'Order dengan invoice/proyek akan dilewati otomatis.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    performBulkAction('delete');
+                }
+            });
+        }
+    }
+
+    function performBulkAction(action) {
+        Swal.fire({
+            title: 'Memproses...',
+            text: 'Mohon tunggu sebentar',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        fetch("{{ route('admin.orders.bulk-action') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ action, order_ids: selectedOrderIds })
+        })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({ success: false, message: 'Gagal memproses respon.' }));
+            if (res.ok && data.success) {
+                Swal.fire('Berhasil', data.message || 'Aksi berhasil dijalankan.', 'success').then(() => window.location.reload());
+            } else {
+                Swal.fire('Gagal', data.message || 'Terjadi kesalahan saat menjalankan aksi.', 'error');
+            }
+        })
+        .catch(() => {
+            Swal.fire('Error', 'Tidak dapat terhubung ke server.', 'error');
+        });
+    }
+</script>
+
+<!-- Bulk Actions Bar -->
+<div id="bulkActionsBar" style="display: none;" class="fixed bottom-6 left-6 right-6 bg-yellow-50 border border-yellow-200 rounded-xl shadow-lg p-4 z-50 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+        <i class="fas fa-list text-yellow-600"></i>
+        <span class="text-sm text-gray-700">Terpilih: <strong id="selectedCount">0</strong> order</span>
+        <button type="button" class="btn btn-ghost btn-xs" onclick="clearSelection()">
+            <i class="fas fa-times mr-1"></i> Bersihkan Pilihan
+        </button>
+    </div>
+    <div class="flex items-center space-x-3">
+        <select id="bulkActionSelect" class="select select-bordered select-sm">
+            <option value="">Pilih Aksi</option>
+            <option value="delete">Hapus</option>
+        </select>
+        <button type="button" class="btn btn-warning btn-sm" onclick="executeBulkAction()">
+            <i class="fas fa-play mr-1"></i> Jalankan
+        </button>
     </div>
 </div>
 @endsection

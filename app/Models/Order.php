@@ -61,7 +61,7 @@ class Order extends Model
 
     public function subscriptionPlan()
     {
-        return $this->belongsTo(SubscriptionPlan::class);
+        return $this->belongsTo(SubscriptionPlan::class)->withTrashed();
     }
 
     public function template()

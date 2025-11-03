@@ -13,6 +13,15 @@ class SubscriptionPlanController extends Controller
     {
         $query = SubscriptionPlan::query();
 
+        // Trashed filter: none | with | only
+        if ($request->filled('trashed')) {
+            if ($request->trashed === 'with') {
+                $query->withTrashed();
+            } elseif ($request->trashed === 'only') {
+                $query->onlyTrashed();
+            }
+        }
+
         // Filter by status
         if ($request->filled('status')) {
             if ($request->status === 'active') {
@@ -50,9 +59,9 @@ class SubscriptionPlanController extends Controller
             'price' => 'required|numeric|min:0',
             'billing_cycle' => 'required|in:monthly,quarterly,semi_annual,annual',
             'cycle_months' => 'required|integer|min:1',
-            'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'features' => 'nullable|array',
             'features.*' => 'string',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'is_active' => 'boolean',
             'is_popular' => 'boolean',
             'sort_order' => 'nullable|integer|min:0',
@@ -74,6 +83,11 @@ class SubscriptionPlanController extends Controller
         // Convert features array to proper format
         if (isset($data['features'])) {
             $data['features'] = array_filter($data['features']);
+        }
+
+        // Normalize discount_percentage: default to 0 if empty
+        if (!isset($data['discount_percentage']) || $data['discount_percentage'] === null) {
+            $data['discount_percentage'] = 0;
         }
 
         SubscriptionPlan::create($data);
@@ -100,9 +114,9 @@ class SubscriptionPlanController extends Controller
             'price' => 'required|numeric|min:0',
             'billing_cycle' => 'required|in:monthly,quarterly,semi_annual,annual',
             'cycle_months' => 'required|integer|min:1',
-            'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'features' => 'nullable|array',
             'features.*' => 'string',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'is_active' => 'boolean',
             'is_popular' => 'boolean',
             'sort_order' => 'nullable|integer|min:0',
@@ -121,6 +135,11 @@ class SubscriptionPlanController extends Controller
             $data['features'] = array_filter($data['features']);
         }
 
+        // Normalize discount_percentage: default to 0 if empty
+        if (!isset($data['discount_percentage']) || $data['discount_percentage'] === null) {
+            $data['discount_percentage'] = 0;
+        }
+
         $subscriptionPlan->update($data);
 
         return redirect()->route('admin.subscription-plans.index')
@@ -129,16 +148,32 @@ class SubscriptionPlanController extends Controller
 
     public function destroy(SubscriptionPlan $subscriptionPlan)
     {
-        // Check if subscription plan is being used in any orders
-        if ($subscriptionPlan->orders()->exists()) {
-            return redirect()->back()
-                ->with('error', 'Paket langganan tidak dapat dihapus karena sedang digunakan dalam pesanan.');
+        // Nonaktifkan lalu soft delete agar aman jika sedang digunakan
+        if ($subscriptionPlan->is_active) {
+            $subscriptionPlan->is_active = false;
+            $subscriptionPlan->save();
         }
 
         $subscriptionPlan->delete();
 
         return redirect()->route('admin.subscription-plans.index')
-            ->with('success', 'Paket langganan berhasil dihapus.');
+            ->with('success', 'Paket langganan diarsipkan (soft delete). Tidak akan muncul di daftar dan tidak bisa dipakai baru.');
+    }
+
+    /**
+     * Restore soft-deleted subscription plan
+     */
+    public function restore($id)
+    {
+        $subscriptionPlan = SubscriptionPlan::withTrashed()->findOrFail($id);
+
+        $subscriptionPlan->restore();
+        // Tetap nonaktif saat dipulihkan; admin bisa mengaktifkan manual jika perlu
+        $subscriptionPlan->is_active = false;
+        $subscriptionPlan->save();
+
+        return redirect()->route('admin.subscription-plans.index')
+            ->with('success', 'Paket langganan berhasil dipulihkan dari arsip (masih nonaktif).');
     }
 
     public function toggleStatus(SubscriptionPlan $subscriptionPlan)

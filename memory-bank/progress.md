@@ -90,6 +90,43 @@
 
 ## Recent Major Updates
 
+### Checkout Flow Update (November 2025)
+ - Langkah Domain dipisahkan dari Personal Info (Step 4) untuk kejelasan alur dan validasi.
+ - Routes: `GET/POST /checkout/domain` dengan nama `checkout.domain` dan `checkout.domain.post`.
+ - Controller: `addons()` redirect ke domain; `personalInfo()` fokus pada customer info saja.
+ - Views: `resources/views/checkout/domain.blade.php` dibuat; DomainSelector dipindahkan dari personal-info.
+ - UI: DomainSelector menampilkan harga TLD (`selectedTldPrice`) dari `DomainService::getDomainPrices()`.
+ - Services: `DomainService` menambahkan `getDomainPrices`, integrasi harga di `checkAvailability` dan `getSuggestions`.
+ - Cart: `domain_amount` tetap `0` karena harga domain termasuk paket subscription.
+ - Testing: Feature/E2E tests yang refer ke alur lama perlu update untuk mencerminkan langkah baru.
+
+### Progress Steps Alignment (November 2025)
+ - ✅ Indikator langkah pada halaman checkout diselaraskan ke urutan baru:
+   **Domain → Template → Info Personal → Paket & Add-ons → Ringkasan → Pembayaran**.
+ - ✅ Views yang diperbarui: `domain.blade.php`, `step1.blade.php`, `personal-info.blade.php`, `configure.blade.php`, `addon.blade.php`, `addons.blade.php`, `summary.blade.php`, `billing.blade.php`.
+ - ⏳ Controller & routes masih memakai urutan lama (Domain = langkah 4); akan disesuaikan pada tugas selanjutnya.
+
+### DomainSelector UI Update (November 2025)
+ - ✅ Menambahkan radio pilihan `domainType` (`new` vs `existing`); WHOIS hanya dijalankan untuk `new`.
+ - ✅ Mengganti dropdown TLD menjadi radio dengan harga untuk 5 TLD: `.com`, `.net`, `.org`, `.id`, `.co.id`.
+ - ✅ Menampilkan harga TLD terpilih di bawah grup TLD.
+ - ✅ Memperluas session `checkout.domain` untuk menyimpan `type`, `name`, `own_domain`, `is_available`, `tld`, `price`.
+ - ✅ Menyesuaikan ringkasan domain terpilih sesuai `domainType` (existing/new).
+ - ✅ Integrasi ke `CartService` dan `CheckoutController` untuk konsumsi nilai `tld` & `price` selesai: Controller menyimpan `type`, `name`, `tld`, `price`, `own_domain`, `is_available` ke `cart->domain_data` serta cookies.
+
+### Domain Step — Hidden Inputs & Sync (November 2025)
+ - ✅ Menambahkan hidden inputs `domain_tld` dan `domain_price` di `resources/views/checkout/domain.blade.php`.
+ - ✅ Memperbarui fungsi `window.updateHiddenInputs` agar menyetel `type`, `name`, `tld`, dan `price` dari event `domainUpdated` Livewire.
+ - ✅ Validasi minimum tetap pada `type` dan `name`; `tld` dan `price` ikut dikirim sebagai fallback saat session tidak tersedia.
+
+### UI Feedback Improvements (November 2025)
+ - ✅ Hint/alert informatif ditambahkan di `checkout/domain` untuk panduan pemilihan domain.
+ - ✅ Alert error umum (`$errors->any()`) kini tampil di `checkout/domain` dan `checkout/personal-info`.
+ - ✅ Toast notifikasi kecil (DaisyUI) untuk `session('success')` dan `session('error')` di kedua halaman.
+ - ✅ Toast dinamis saat event `domainUpdated` pada halaman domain untuk feedback instan.
+ - ✅ `CheckoutController@domain` mengirim flash success saat redirect ("Domain berhasil disimpan.") agar terlihat di halaman Info Personal.
+
+
 ### Latest Development Cycle (January 2025)
 **Cart System & Checkout Enhancement:**
 - ✅ Database-driven cart system dengan Cart dan CartAddon models
@@ -115,6 +152,20 @@
 - ✅ Balasan internal admin disembunyikan dari thread percakapan klien (client tickets show)
 - ✅ Fitur reopen tiket: Admin dapat membuka kembali tiket berstatus closed via endpoint dan UI (show & index)
 
+**Subscription Plans — Discount Feature Restored:**
+- ✅ Validasi `discount_percentage` ditambahkan kembali pada controller (store & update)
+- ✅ Kolom "Diskon" ditampilkan pada halaman index subscription plans
+- ✅ Input "Diskon (%)" tersedia pada halaman create & edit
+- ✅ Informasi Diskon ditampilkan pada halaman detail (show)
+
+**Checkout/Invoice — Discount Integration:**
+- ✅ Accessor `SubscriptionPlan::discounted_price` ditambahkan untuk normalisasi harga setelah diskon
+- ✅ CartService menghitung `template_amount` dan `subscriptionAmount` menggunakan harga diskon
+- ✅ Livewire CheckoutSummaryComponent menghitung `subscriptionAmount`, `subtotal`, dan `totalAmount` dengan harga diskon
+- ✅ UI checkout menampilkan breakdown: harga asli (strikethrough), persen diskon, harga akhir
+- ✅ Halaman addons menampilkan harga diskon dengan indikasi persen diskon
+- ✅ Order & Invoice kini mencerminkan subtotal/total pasca-diskon di alur checkout
+
 ### Security & Input Sanitization
 - ✅ Paritas sanitasi HTML untuk Support Tickets: sisi Admin kini menggunakan sanitasi yang sama dengan Client (allowed tags whitelist) pada `description` (create/update) dan `message` (reply) untuk mitigasi XSS.
 
@@ -126,6 +177,7 @@
    - Feature tests untuk payment flow
    - Browser tests untuk user journeys
    - API endpoint testing
+   - Tambahkan tests untuk kalkulasi diskon: accessor model, CartService totals, CheckoutSummary totals, dan konsistensi invoice/order amounts
 
 2. **Performance Optimization**
    - Query optimization review

@@ -25,11 +25,15 @@ class DomainService
             // For now, simulate domain availability check
             // In production, integrate with actual domain registrar API
             $isAvailable = $this->simulateDomainCheck($domain);
+            $tld = $this->extractTld($domain);
+            $prices = $this->getDomainPrices();
+            $price = $prices[$tld] ?? 0;
             
             return [
                 'available' => $isAvailable,
                 'domain' => $domain,
-                'suggestions' => $isAvailable ? [] : $this->getDomainSuggestions($domain)
+                'price' => $price > 0 ? $price : 150000,
+                'suggestions' => $isAvailable ? [] : $this->getSuggestions($domain)
             ];
         } catch (\Exception $e) {
             Log::error('Domain availability check failed: ' . $e->getMessage());
@@ -43,21 +47,23 @@ class DomainService
     }
 
     /**
-     * Get domain suggestions if domain is not available
+     * Get domain suggestions with pricing if domain is not available
      */
-    public function getDomainSuggestions(string $domain): array
+    public function getSuggestions(string $domain): array
     {
         $domainName = $this->extractDomainName($domain);
         $suggestions = [];
 
-        $tlds = ['com', 'net', 'org', 'id', 'co.id', 'biz.id', 'web.id', 'my.id'];
+        $tlds = ['com', 'net', 'org', 'info', 'biz', 'id', 'co.id', 'biz.id', 'web.id', 'my.id', 'co.uk', 'com.au'];
+        $prices = $this->getDomainPrices();
         
         foreach ($tlds as $tld) {
             $suggestion = $domainName . '.' . $tld;
             if ($suggestion !== $domain && $this->simulateDomainCheck($suggestion)) {
                 $suggestions[] = [
                     'domain' => $suggestion,
-                    'available' => true
+                    'available' => true,
+                    'price' => $prices[$tld] ?? 150000
                 ];
             }
         }
@@ -71,7 +77,8 @@ class DomainService
             if ($this->simulateDomainCheck($suggestion)) {
                 $suggestions[] = [
                     'domain' => $suggestion,
-                    'available' => true
+                    'available' => true,
+                    'price' => $prices['com'] ?? 150000
                 ];
             }
         }
@@ -81,12 +88,21 @@ class DomainService
             if ($this->simulateDomainCheck($suggestion)) {
                 $suggestions[] = [
                     'domain' => $suggestion,
-                    'available' => true
+                    'available' => true,
+                    'price' => $prices['com'] ?? 150000
                 ];
             }
         }
 
         return array_slice($suggestions, 0, 5); // Return max 5 suggestions
+    }
+
+    /**
+     * Backward compatibility alias
+     */
+    public function getDomainSuggestions(string $domain): array
+    {
+        return $this->getSuggestions($domain);
     }
 
     /**
@@ -128,9 +144,17 @@ class DomainService
     }
 
     /**
+     * Validate domain format (alias for tests)
+     */
+    public function validateDomainFormat(string $domain): bool
+    {
+        return $this->validateDomain($domain);
+    }
+
+    /**
      * Extract TLD from domain
      */
-    protected function extractTld(string $domain): string
+    public function extractTld(string $domain): string
     {
         $parts = explode('.', $domain);
         if (count($parts) >= 3 && in_array(end($parts), ['id'])) {
@@ -143,7 +167,7 @@ class DomainService
     /**
      * Extract domain name without TLD
      */
-    protected function extractDomainName(string $domain): string
+    public function extractDomainName(string $domain): string
     {
         $tld = $this->extractTld($domain);
         return str_replace('.' . $tld, '', $domain);
@@ -202,11 +226,36 @@ class DomainService
             'com' => ['name' => '.com', 'popular' => true],
             'net' => ['name' => '.net', 'popular' => true],
             'org' => ['name' => '.org', 'popular' => true],
+            'info' => ['name' => '.info', 'popular' => false],
+            'biz' => ['name' => '.biz', 'popular' => false],
             'id' => ['name' => '.id', 'popular' => true],
             'co.id' => ['name' => '.co.id', 'popular' => true],
             'biz.id' => ['name' => '.biz.id', 'popular' => false],
             'web.id' => ['name' => '.web.id', 'popular' => false],
             'my.id' => ['name' => '.my.id', 'popular' => false],
+            'co.uk' => ['name' => '.co.uk', 'popular' => false],
+            'com.au' => ['name' => '.com.au', 'popular' => false],
+        ];
+    }
+
+    /**
+     * Get domain prices mapping
+     */
+    public function getDomainPrices(): array
+    {
+        return [
+            'com' => 150000,
+            'net' => 130000,
+            'org' => 140000,
+            'info' => 120000,
+            'biz' => 120000,
+            'id' => 250000,
+            'co.id' => 200000,
+            'biz.id' => 160000,
+            'web.id' => 150000,
+            'my.id' => 100000,
+            'co.uk' => 200000,
+            'com.au' => 220000,
         ];
     }
 }
