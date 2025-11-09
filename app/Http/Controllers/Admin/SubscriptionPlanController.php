@@ -57,7 +57,8 @@ class SubscriptionPlanController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'billing_cycle' => 'required|in:monthly,quarterly,semi_annual,annual',
+            // Terima kedua set nilai agar kompatibel dengan UI dan DB lama
+            'billing_cycle' => 'required|in:monthly,quarterly,semi_annual,annual,6_months,annually,2_years,3_years',
             'cycle_months' => 'required|integer|min:1',
             'features' => 'nullable|array',
             'features.*' => 'string',
@@ -74,6 +75,37 @@ class SubscriptionPlanController extends Controller
         }
 
         $data = $validator->validated();
+
+        // Map cycle_months dari billing_cycle untuk konsistensi
+        $cycleMap = [
+            'monthly' => 1,
+            'quarterly' => 3,
+            'semi_annual' => 6,
+            'annual' => 12,
+            '6_months' => 6,
+            'annually' => 12,
+            '2_years' => 24,
+            '3_years' => 36,
+        ];
+        if (isset($data['billing_cycle']) && isset($cycleMap[$data['billing_cycle']])) {
+            $data['cycle_months'] = $cycleMap[$data['billing_cycle']];
+        }
+
+        // Normalisasi nilai untuk kompatibilitas MySQL enum lama
+        try {
+            $driver = \DB::connection()->getDriverName();
+            if ($driver === 'mysql' && isset($data['billing_cycle'])) {
+                $normalizeMap = [
+                    'annual' => 'annually',
+                    'semi_annual' => '6_months',
+                ];
+                if (isset($normalizeMap[$data['billing_cycle']])) {
+                    $data['billing_cycle'] = $normalizeMap[$data['billing_cycle']];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Abaikan jika gagal deteksi driver; default ke nilai yang dikirim
+        }
         
         // Set default sort order if not provided
         if (!isset($data['sort_order'])) {
@@ -112,7 +144,8 @@ class SubscriptionPlanController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'billing_cycle' => 'required|in:monthly,quarterly,semi_annual,annual',
+            // Terima kedua set nilai agar kompatibel dengan UI dan DB lama
+            'billing_cycle' => 'required|in:monthly,quarterly,semi_annual,annual,6_months,annually,2_years,3_years',
             'cycle_months' => 'required|integer|min:1',
             'features' => 'nullable|array',
             'features.*' => 'string',
@@ -138,6 +171,37 @@ class SubscriptionPlanController extends Controller
         // Normalize discount_percentage: default to 0 if empty
         if (!isset($data['discount_percentage']) || $data['discount_percentage'] === null) {
             $data['discount_percentage'] = 0;
+        }
+
+        // Map cycle_months dari billing_cycle untuk konsistensi
+        $cycleMap = [
+            'monthly' => 1,
+            'quarterly' => 3,
+            'semi_annual' => 6,
+            'annual' => 12,
+            '6_months' => 6,
+            'annually' => 12,
+            '2_years' => 24,
+            '3_years' => 36,
+        ];
+        if (isset($data['billing_cycle']) && isset($cycleMap[$data['billing_cycle']])) {
+            $data['cycle_months'] = $cycleMap[$data['billing_cycle']];
+        }
+
+        // Normalisasi nilai untuk kompatibilitas MySQL enum lama
+        try {
+            $driver = \DB::connection()->getDriverName();
+            if ($driver === 'mysql' && isset($data['billing_cycle'])) {
+                $normalizeMap = [
+                    'annual' => 'annually',
+                    'semi_annual' => '6_months',
+                ];
+                if (isset($normalizeMap[$data['billing_cycle']])) {
+                    $data['billing_cycle'] = $normalizeMap[$data['billing_cycle']];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Abaikan jika gagal deteksi driver; default ke nilai yang dikirim
         }
 
         $subscriptionPlan->update($data);

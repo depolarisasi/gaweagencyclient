@@ -71,11 +71,14 @@ class SubscriptionPlan extends Model
     {
         return match($this->billing_cycle) {
             'monthly' => 'Per Bulan',
+            'quarterly' => 'Per 3 Bulan',
+            'semi_annual' => 'Per 6 Bulan',
             '6_months' => 'Per 6 Bulan',
+            'annual' => 'Per Tahun',
             'annually' => 'Per Tahun',
             '2_years' => 'Per 2 Tahun',
             '3_years' => 'Per 3 Tahun',
-            default => ucfirst($this->billing_cycle),
+            default => str_replace('_', ' ', ucfirst($this->billing_cycle)),
         };
     }
 

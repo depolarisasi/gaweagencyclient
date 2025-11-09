@@ -29,8 +29,10 @@ class ProductShowcase extends Component
     public function selectTemplate($templateId)
     {
         $this->selectedTemplateId = $templateId;
+        // Simpan pilihan template di sesi untuk konsistensi
         session(['selected_template_id' => $templateId]);
-        // Redirect or emit event to proceed to configuration
-        return redirect()->route('checkout.configure');
+        session(['checkout.template_id' => $templateId]);
+        // Arahkan ke halaman pemilihan template sesuai flow baru
+        return redirect()->route('checkout.template');
     }
 }

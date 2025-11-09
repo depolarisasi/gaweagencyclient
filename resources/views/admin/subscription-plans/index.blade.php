@@ -43,10 +43,11 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Siklus Pembayaran</label>
                         <select name="billing_cycle" class="select select-bordered w-full">
                             <option value="">Semua Siklus</option>
-                            <option value="monthly" {{ request('billing_cycle') === 'monthly' ? 'selected' : '' }}>Bulanan</option>
-                            <option value="quarterly" {{ request('billing_cycle') === 'quarterly' ? 'selected' : '' }}>Triwulan</option>
-                            <option value="semi_annual" {{ request('billing_cycle') === 'semi_annual' ? 'selected' : '' }}>6 Bulan</option>
-                            <option value="annual" {{ request('billing_cycle') === 'annual' ? 'selected' : '' }}>Tahunan</option>
+                            <option value="monthly" {{ request('billing_cycle') === 'monthly' ? 'selected' : '' }}>Bulanan (1)</option>
+                            <option value="6_months" {{ request('billing_cycle') === '6_months' ? 'selected' : '' }}>Semester (6)</option>
+                            <option value="annually" {{ request('billing_cycle') === 'annually' ? 'selected' : '' }}>Tahunan (12)</option>
+                            <option value="2_years" {{ request('billing_cycle') === '2_years' ? 'selected' : '' }}>2 Tahunan (24)</option>
+                            <option value="3_years" {{ request('billing_cycle') === '3_years' ? 'selected' : '' }}>3 Tahunan (36)</option>
                         </select>
                     </div>
                     
@@ -105,7 +106,7 @@
                                         <div class="font-medium text-gray-900">Rp {{ number_format($plan->price, 0, ',', '.') }}</div>
                                     </td>
                                     <td>
-                                        <span class="badge badge-outline">{{ ucfirst(str_replace('_', ' ', $plan->billing_cycle)) }} </span>
+                                        <span class="badge badge-outline">{{ $plan->billing_cycle_label }}</span>
                                     </td>
                                     <td>
                                         @if((float)($plan->discount_percentage ?? 0) > 0)

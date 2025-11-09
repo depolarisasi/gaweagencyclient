@@ -32,6 +32,7 @@
     </footer>
  
     @yield('scripts')
+    @stack('scripts')
     @livewireScripts
             {{-- Global SweetAlert include --}}  
 </body>

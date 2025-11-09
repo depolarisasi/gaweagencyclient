@@ -39,7 +39,7 @@
             <div class="flex-1">
                 <span class="block text-xs text-gray-500 mb-2">Pilih TLD</span>
                 <div class="flex flex-wrap gap-2 items-center">
-                    @php($tlds = ['com','net','org','id','co.id'])
+@php $tlds = ['com','net','org','id','co.id']; @endphp
                     @foreach($tlds as $tld)
                         <label class="inline-flex items-center gap-2 px-2 py-1 border rounded-md">
                             <input type="radio" value="{{ $tld }}" wire:model.live="selectedTld" class="text-blue-600 focus:ring-blue-500">

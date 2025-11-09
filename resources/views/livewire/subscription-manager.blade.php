@@ -182,7 +182,7 @@
                                                         <div class="flex justify-between items-center">
                                                             <div>
                                                                 <p class="text-sm font-medium text-gray-900">{{ $plan->name }}</p>
-                                                                <p class="text-xs text-gray-500">{{ $plan->billing_cycle }}</p>
+                                                                <p class="text-xs text-gray-500">{{ $plan->billing_cycle_label }}</p>
                                                             </div>
                                                             <div class="text-right">
                                                                 <p class="text-sm font-medium text-gray-900">

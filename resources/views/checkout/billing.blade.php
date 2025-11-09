@@ -372,7 +372,9 @@
                         @if(isset($domainInfo) && $domainInfo)
                             <div class="flex justify-between items-center py-2">
                                 <span class="text-gray-600">Domain: {{ $domainInfo['domain_name'] ?? $domainInfo['name'] ?? 'N/A' }}</span>
-                                @php($type = $domainInfo['domain_type'] ?? $domainInfo['type'] ?? 'unknown')
+                                @php
+                                    $type = $domainInfo['domain_type'] ?? $domainInfo['type'] ?? 'unknown';
+                                @endphp
                                 @if($type === 'new')
                                     @php
                                         $tldShown = $domainInfo['tld'] ?? null;
@@ -508,7 +510,7 @@
     </div>
 </div>
 
-@push('scripts')
+@section('scripts')
 <script>
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(function() {
@@ -639,61 +641,7 @@ function togglePaymentInstructions(type = '') {
     }
 }
 </script>
-@endpush
-
-<!-- Payment Guide Modal -->
-@if(isset($tripayTransaction['instructions']) && count($tripayTransaction['instructions']) > 0)
-<div id="paymentGuideModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">
-                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Panduan Pembayaran
-                </h3>
-                <button onclick="closePaymentGuideModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="max-h-96 overflow-y-auto">
-                @foreach($tripayTransaction['instructions'] as $instruction)
-                    <div class="mb-6">
-                        <h4 class="font-semibold text-gray-900 mb-3">{!! $instruction['title'] !!}</h4>
-                        <ol class="list-decimal list-inside space-y-2 text-gray-700">
-                            @foreach($instruction['steps'] as $step)
-                                <li class="text-sm">{!! $step !!}</li>
-                            @endforeach
-                        </ol>
-                    </div>
-                @endforeach
-                
-                <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <div class="flex">
-                        <svg class="w-5 h-5 text-yellow-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                        </svg>
-                        <div>
-                            <p class="text-sm font-medium text-yellow-800">Penting!</p>
-                            <p class="text-sm text-yellow-700">Pastikan nominal yang dibayarkan sesuai dengan total pembayaran yang tertera. Pembayaran dengan nominal yang tidak sesuai akan ditolak secara otomatis.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-6 flex justify-end">
-                <button onclick="closePaymentGuideModal()" 
-                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                    Tutup
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
+@endsection
+ 
 
 @endsection

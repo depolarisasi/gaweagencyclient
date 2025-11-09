@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\WelcomeNotification;
 
 class RegisterController extends Controller
 {
@@ -49,6 +50,16 @@ class RegisterController extends Controller
 
         // Auto-login the user and redirect to appropriate dashboard
         Auth::login($user);
+        
+        // Send welcome email to newly registered user
+        try {
+            $user->notify(new WelcomeNotification());
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to send WelcomeNotification after registration', [
+                'user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
         
         // Set session flag for cart merging
         session(['user_just_logged_in' => true]);

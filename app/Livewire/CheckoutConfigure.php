@@ -51,7 +51,7 @@ class CheckoutConfigure extends Component
         Session::put('checkout.billing_cycle', $this->selectedBillingCycle);
         Session::put('checkout.template_id', $this->selectedTemplateId);
 
-        return redirect()->route('checkout.addons.show'); // Arahkan ke halaman add-ons
+        return redirect()->route('checkout.summary'); // Alur baru: langsung ke ringkasan (add-ons opsional di configure)
     }
 
     public function render()

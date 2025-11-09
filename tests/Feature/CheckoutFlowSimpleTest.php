@@ -38,7 +38,7 @@ class CheckoutFlowSimpleTest extends TestCase
         $response = $this->get('/checkout/configure');
         
         $response->assertStatus(200);
-        $response->assertViewIs('checkout.configure-page');
+        $response->assertViewIs('checkout.configure');
     }
 
     /** @test */
@@ -69,30 +69,28 @@ class CheckoutFlowSimpleTest extends TestCase
             'email' => 'john@example.com',
             'phone' => '081234567890',
             'company' => 'Test Company',
-            'domain_name' => 'example.com',
-            'domain_type' => 'new'
+            // Domain dikumpulkan di langkah domain terpisah
         ];
 
         $response = $this->withSession([
             'selected_template_id' => $this->template->id,
             'checkout.template_id' => $this->template->id,
+            'checkout.subscription_plan_id' => $this->subscriptionPlan->id,
             'checkout.domain' => ['type' => 'new', 'name' => 'example.com']
         ])->post('/checkout/personal-info', $personalInfo);
         
-        $response->assertStatus(200);
-        $response->assertViewIs('checkout.billing-cycle');
+        $response->assertRedirect('/checkout/summary');
         $this->assertNotNull(session('checkout.customer_info'));
     }
 
     /** @test */
-    public function billing_cycle_page_requires_customer_info()
+    public function summary_page_requires_complete_data()
     {
         Session::put('checkout.template_id', $this->template->id);
         Session::put('selected_template_id', $this->template->id);
-        
-        $response = $this->get('/checkout/billing-cycle');
-        
-        $response->assertRedirect('/checkout/personal-info');
+        // Tidak ada subscription_plan atau customer_info → summary harus redirect ke awal
+        $response = $this->get('/checkout/summary');
+        $response->assertRedirect('/checkout');
     }
 
     /** @test */
@@ -111,13 +109,12 @@ class CheckoutFlowSimpleTest extends TestCase
             'existing_domain' => 'example.com'
         ]);
         
-        $response = $this->post('/checkout/billing-cycle', [
+        $response = $this->post('/checkout/configure', [
             'subscription_plan_id' => $this->subscriptionPlan->id,
             'billing_cycle' => 'monthly'
         ]);
         
-        $response->assertStatus(200);
-        $response->assertViewIs('checkout.addons');
+        $response->assertRedirect('/checkout/addon');
         $this->assertEquals($this->subscriptionPlan->id, Session::get('checkout.subscription_plan_id'));
         $this->assertEquals('monthly', Session::get('checkout.billing_cycle'));
     }
@@ -137,12 +134,12 @@ class CheckoutFlowSimpleTest extends TestCase
         Session::put('checkout.billing_cycle', 'monthly');
         Session::put('checkout.domain', ['type' => 'existing']);
         
-        $response = $this->get('/checkout/addons');
+        $response = $this->get('/checkout/configure');
         
         $response->assertStatus(200);
-        $response->assertViewIs('checkout.addons');
+        $response->assertViewIs('checkout.configure');
         $response->assertViewHas('addons');
-        $response->assertViewHas('subscriptionPlan');
+        $response->assertViewHas('subscriptionPlans');
     }
 
     /** @test */
@@ -160,12 +157,13 @@ class CheckoutFlowSimpleTest extends TestCase
         Session::put('checkout.billing_cycle', 'monthly');
         Session::put('checkout.domain', ['type' => 'existing']);
         
-        $response = $this->post('/checkout/addons', [
+        $response = $this->post('/checkout/configure', [
+            'subscription_plan_id' => $this->subscriptionPlan->id,
+            'billing_cycle' => 'monthly',
             'selected_addons' => [$this->addon->id]
         ]);
         
-        $response->assertStatus(200);
-        $response->assertViewIs('checkout.summary');
+        $response->assertRedirect('/checkout/summary');
         $this->assertEquals([$this->addon->id], Session::get('checkout.selected_addons'));
     }
 
@@ -202,7 +200,7 @@ class CheckoutFlowSimpleTest extends TestCase
     {
         $response = $this->post('/checkout/personal-info', []);
         
-        $response->assertSessionHasErrors(['full_name', 'email', 'phone', 'domain_name', 'domain_type']);
+        $response->assertSessionHasErrors(['full_name', 'email', 'phone']);
     }
 
     /** @test */
@@ -214,9 +212,7 @@ class CheckoutFlowSimpleTest extends TestCase
         $response = $this->post('/checkout/personal-info', [
             'full_name' => 'John Doe',
             'email' => 'invalid-email',
-            'phone' => '1234567890',
-            'domain_name' => 'example.com',
-            'domain_type' => 'new'
+            'phone' => '1234567890'
         ]);
         
         $response->assertSessionHasErrors(['email']);

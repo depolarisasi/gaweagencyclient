@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Services\InvoicePdfService;
 
 class InvoiceController extends Controller
 {
@@ -310,9 +311,36 @@ class InvoiceController extends Controller
      */
     public function download(Invoice $invoice)
     {
-        // TODO: Generate and return PDF
-        // For now, redirect to show page
-        return redirect()->route('admin.invoices.show', $invoice);
+        $invoice->load(['user', 'order', 'order.product']);
+
+        try {
+            $service = app(InvoicePdfService::class);
+            $pdfBinary = $service->generate($invoice);
+
+            if (!$pdfBinary) {
+                \Log::warning('Gagal generate PDF untuk invoice', [
+                    'invoice_id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                ]);
+                return redirect()
+                    ->route('admin.invoices.show', $invoice)
+                    ->with('error', 'Gagal menghasilkan PDF invoice.');
+            }
+
+            $filename = 'Invoice-' . ($invoice->invoice_number ?? $invoice->id) . '.pdf';
+            return response($pdfBinary, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error pada download PDF invoice', [
+                'invoice_id' => $invoice->id,
+                'message' => $e->getMessage(),
+            ]);
+            return redirect()
+                ->route('admin.invoices.show', $invoice)
+                ->with('error', 'Terjadi kesalahan saat mengunduh PDF invoice.');
+        }
     }
     
     /**

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Project;
 use App\Services\TripayService;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\PaymentSuccessful;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -171,6 +173,19 @@ class PaymentController extends Controller
             // If payment is successful, activate project
             if ($callbackData['status'] === 'PAID') {
                 $this->activateProject($invoice);
+
+                // Send payment successful notification to client
+                try {
+                    if ($invoice->user) {
+                        $invoice->user->notify(new PaymentSuccessful($invoice));
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to send PaymentSuccessful notification', [
+                        'invoice_id' => $invoice->id,
+                        'user_id' => $invoice->user_id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
             }
 
             DB::commit();

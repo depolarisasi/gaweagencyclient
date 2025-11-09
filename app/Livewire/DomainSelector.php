@@ -215,7 +215,13 @@ class DomainSelector extends Component
         
         // Also call JavaScript function directly
         \Log::info('Calling JavaScript updateHiddenInputs with data', $domainData);
-        $this->js('console.log("JS call from Livewire:", ' . json_encode($domainData) . '); window.updateHiddenInputs(' . json_encode($domainData) . ')');
+        $this->js('console.log("JS call from Livewire:", ' . json_encode($domainData) . ');
+            if (window && typeof window.updateHiddenInputs === "function") {
+                window.updateHiddenInputs(' . json_encode($domainData) . ');
+            } else {
+                window.dispatchEvent(new CustomEvent("domainUpdated", { detail: ' . json_encode($domainData) . ' }));
+            }
+        ');
     }
 
     public function render()

@@ -219,11 +219,10 @@
                             <select name="billing_cycle" class="select select-bordered focus:select-primary @error('billing_cycle') select-error @enderror">
                                 <option value="">Choose billing cycle (optional)</option>
                                 <option value="monthly" {{ old('billing_cycle', $order->billing_cycle) === 'monthly' ? 'selected' : '' }}>Monthly</option>
-                                <option value="quarterly" {{ old('billing_cycle', $order->billing_cycle) === 'quarterly' ? 'selected' : '' }}>Quarterly (3 months)</option>
-                                <option value="semi_annually" {{ old('billing_cycle', $order->billing_cycle) === 'semi_annually' ? 'selected' : '' }}>Semi-Annually (6 months)</option>
+                                <option value="6_months" {{ old('billing_cycle', $order->billing_cycle) === '6_months' ? 'selected' : '' }}>Semi-Annually (6 months)</option>
                                 <option value="annually" {{ old('billing_cycle', $order->billing_cycle) === 'annually' ? 'selected' : '' }}>Annually (12 months)</option>
-                                <option value="biennially" {{ old('billing_cycle', $order->billing_cycle) === 'biennially' ? 'selected' : '' }}>Biennially (24 months)</option>
-                                <option value="triennially" {{ old('billing_cycle', $order->billing_cycle) === 'triennially' ? 'selected' : '' }}>Triennially (36 months)</option>
+                                <option value="2_years" {{ old('billing_cycle', $order->billing_cycle) === '2_years' ? 'selected' : '' }}>2 Years (24 months)</option>
+                                <option value="3_years" {{ old('billing_cycle', $order->billing_cycle) === '3_years' ? 'selected' : '' }}>3 Years (36 months)</option>
                             </select>
                             @error('billing_cycle')
                                 <label class="label">

@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('name'); // Monthly Plan, 6 Months Plan, etc.
             $table->text('description');
             $table->decimal('price', 15, 2); // Harga dalam IDR
-            $table->enum('billing_cycle', ['monthly', '6_months', 'annually', '2_years', '3_years']);
+            // Konsisten dengan UI/Admin dan controller: monthly, quarterly, semi_annual, annual
+            $table->enum('billing_cycle', ['monthly', 'quarterly', 'semi_annual', 'annual']);
             $table->integer('cycle_months'); // 1, 6, 12, 24, 36
             $table->decimal('discount_percentage', 5, 2)->default(0); // Persentase diskon
             $table->json('features')->nullable(); // JSON array of features included

@@ -64,9 +64,10 @@
                         <select name="billing_cycle" class="select select-bordered w-full @error('billing_cycle') select-error @enderror">
                             <option value="">Pilih Siklus Pembayaran</option>
                             <option value="monthly" {{ old('billing_cycle') === 'monthly' ? 'selected' : '' }}>Bulanan</option>
-                            <option value="quarterly" {{ old('billing_cycle') === 'quarterly' ? 'selected' : '' }}>Triwulan (3 Bulan)</option>
-                            <option value="semi_annual" {{ old('billing_cycle') === 'semi_annual' ? 'selected' : '' }}>Semi Annual (6 Bulan)</option>
-                            <option value="annual" {{ old('billing_cycle') === 'annual' ? 'selected' : '' }}>Tahunan</option>
+                            <option value="6_months" {{ old('billing_cycle') === '6_months' ? 'selected' : '' }}>Semester (6 Bulan)</option>
+                            <option value="annually" {{ old('billing_cycle') === 'annually' ? 'selected' : '' }}>Tahunan (12 Bulan)</option>
+                            <option value="2_years" {{ old('billing_cycle') === '2_years' ? 'selected' : '' }}>2 Tahunan (24 Bulan)</option>
+                            <option value="3_years" {{ old('billing_cycle') === '3_years' ? 'selected' : '' }}>3 Tahunan (36 Bulan)</option>
                         </select>
                         @error('billing_cycle')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -78,9 +79,9 @@
                             Durasi (Bulan) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" name="cycle_months" value="{{ old('cycle_months') }}" 
-                               class="input input-bordered w-full @error('cycle_months') input-error @enderror" 
-                               placeholder="1" min="1" max="12">
-                        <p class="text-sm text-gray-500 mt-1">Durasi dalam bulan untuk siklus pembayaran ini</p>
+                               class="input input-bordered w-full bg-gray-50 @error('cycle_months') input-error @enderror" 
+                               placeholder="1" min="1" max="12" readonly>
+                        <p class="text-sm text-gray-500 mt-1">Otomatis diisi berdasarkan pilihan siklus pembayaran.</p>
                         @error('cycle_months')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -229,15 +230,30 @@
             billingCycleSelect.addEventListener('change', function() {
                 const cycleMap = {
                     'monthly': 1,
-                    'quarterly': 3,
-                    'semi_annual': 6,
-                    'annual': 12
+                    '6_months': 6,
+                    'annually': 12,
+                    '2_years': 24,
+                    '3_years': 36
                 };
                 
-                if (cycleMap[this.value]) {
+                if (cycleMap[this.value] !== undefined) {
                     cycleMonthsInput.value = cycleMap[this.value];
+                } else {
+                    cycleMonthsInput.value = '';
                 }
             });
+
+            // Initialize default on load if already selected
+            if (billingCycleSelect.value) {
+                const cycleMap = {
+                    'monthly': 1,
+                    '6_months': 6,
+                    'annually': 12,
+                    '2_years': 24,
+                    '3_years': 36
+                };
+                cycleMonthsInput.value = cycleMap[billingCycleSelect.value] || '';
+            }
         });
     </script>
         </div>

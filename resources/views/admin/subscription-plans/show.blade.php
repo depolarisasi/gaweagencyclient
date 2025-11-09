@@ -59,7 +59,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-500">Siklus Pembayaran</label>
                             <p class="text-lg font-medium text-gray-900">
-                                {{ ucfirst(str_replace('_', ' ', $subscriptionPlan->billing_cycle)) }}
+                                {{ $subscriptionPlan->billing_cycle_label }}
                                 <span class="text-sm text-gray-600">({{ $subscriptionPlan->cycle_months }} bulan)</span>
                             </p>
                         </div>

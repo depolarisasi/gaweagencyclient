@@ -179,14 +179,14 @@ class CheckoutFlowTest extends TestCase
             ]
         ]);
 
-        $response = $this->get(route('checkout.addons.show'));
+        $response = $this->get(route('checkout.configure'));
         
         $response->assertStatus(200);
-        $response->assertViewIs('checkout.addons');
+        $response->assertViewIs('checkout.configure');
     }
 
     /** @test */
-    public function user_can_select_addons_and_proceed_to_summary()
+    public function user_can_select_addons_and_proceed_to_domain()
     {
         $this->createTestData();
         
@@ -198,20 +198,16 @@ class CheckoutFlowTest extends TestCase
                 'name' => 'John Doe',
                 'email' => 'john@example.com',
                 'phone' => '08123456789'
-            ],
-            'checkout.domain' => [
-                'type' => 'new',
-                'name' => 'example.com',
-                'price' => 150000
             ]
         ]);
 
-        $response = $this->post(route('checkout.summary'), [
+        $response = $this->post(route('checkout.configure.post'), [
+            'subscription_plan_id' => $this->subscriptionPlan->id,
+            'billing_cycle' => 'monthly',
             'selected_addons' => [$this->addon->id]
         ]);
 
-        $response->assertStatus(200);
-        $response->assertViewIs('checkout.summary');
+        $response->assertRedirect(route('checkout.summary'));
         $response->assertSessionHas('checkout.selected_addons', [$this->addon->id]);
     }
 
@@ -327,7 +323,7 @@ class CheckoutFlowTest extends TestCase
 
         $response = $this->post(route('checkout.personal-info'), []);
         
-        $response->assertSessionHasErrors(['full_name', 'email', 'phone', 'domain_name', 'domain_type']);
+        $response->assertSessionHasErrors(['full_name', 'email', 'phone']);
     }
 
     /** @test */
@@ -335,44 +331,33 @@ class CheckoutFlowTest extends TestCase
     {
         $this->createTestData();
         
+        // Existing domain type
         $this->withSession([
             'checkout.template_id' => $this->template->id,
             'selected_template_id' => $this->template->id,
+            'checkout.subscription_plan_id' => $this->subscriptionPlan->id,
             'checkout.domain' => [
                 'type' => 'existing',
-                'existing' => 'myexistingdomain.com'
+                'name' => 'myexistingdomain.com'
             ]
         ]);
 
-        $response = $this->post(route('checkout.personal-info'), [
-            'full_name' => 'John Doe',
-            'email' => 'john@example.com',
-            'phone' => '08123456789',
-            'domain_name' => 'myexistingdomain.com',
-            'domain_type' => 'existing'
-        ]);
+        $response = $this->post(route('checkout.domain'));
+        $response->assertRedirect(route('checkout.personal-info'));
 
-        $response->assertRedirect(route('checkout.summary'));
-
-        // Test subdomain
+        // Subdomain type
         $this->withSession([
             'checkout.template_id' => $this->template->id,
             'selected_template_id' => $this->template->id,
+            'checkout.subscription_plan_id' => $this->subscriptionPlan->id,
             'checkout.domain' => [
                 'type' => 'subdomain',
-                'subdomain' => 'mysite'
+                'name' => 'mysite'
             ]
         ]);
 
-        $response = $this->post(route('checkout.personal-info'), [
-            'full_name' => 'Jane Doe',
-            'email' => 'jane@example.com',
-            'phone' => '08123456789',
-            'domain_name' => 'mysite',
-            'domain_type' => 'subdomain'
-        ]);
-
-        $response->assertRedirect(route('checkout.summary'));
+        $response = $this->post(route('checkout.domain'));
+        $response->assertRedirect(route('checkout.personal-info'));
     }
 
     /** @test */

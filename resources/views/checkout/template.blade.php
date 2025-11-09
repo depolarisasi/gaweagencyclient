@@ -68,9 +68,9 @@
         <!-- Main Content -->
         <div class="bg-white rounded-lg shadow-sm">
             <div class="px-6 py-8">
-                    <form method="POST" action="{{ route('checkout.step1') }}" id="templateForm">
+                    <form method="POST" action="{{ route('checkout.template.post') }}" id="templateForm">
                         @csrf
-                        <input type="hidden" name="template_id" id="selected_template_id" value="{{ old('template_id') }}">
+                        <input type="hidden" name="template_id" id="selected_template_id" value="{{ old('template_id', $selectedTemplateId ?? null) }}">
 
                         <!-- Template Selection Cards -->
                         <div class="mb-6">
@@ -80,7 +80,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <!-- Template Options -->
                                 @foreach($templates as $template)
-                                <div class="template-card border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors {{ old('template_id') == $template->id ? 'border-blue-500 bg-blue-50' : '' }}" 
+                                <div class="template-card border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors {{ (old('template_id', $selectedTemplateId ?? null) == $template->id) ? 'border-blue-500 bg-blue-50' : '' }}" 
                                      data-template-id="{{ $template->id }}">
                                     <div class="flex flex-col">
                                         <!-- Template Thumbnail -->
@@ -124,7 +124,13 @@
                             @enderror
                         </div>
 
-                        <div class="flex items-center justify-end mt-6">
+                        <div class="flex items-center justify-between mt-6">
+                            <a href="{{ route('checkout.domain') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                                Kembali ke Domain
+                            </a>
                             <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                                 {{ __('Lanjutkan') }}
                                 <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

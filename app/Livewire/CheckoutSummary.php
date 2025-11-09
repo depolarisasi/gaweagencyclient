@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
+use App\Notifications\WelcomeNotification;
 use App\Notifications\NewProjectNotification;
 
 class CheckoutSummary extends Component
@@ -76,6 +77,16 @@ class CheckoutSummary extends Component
             ]);
 
             Auth::login($user);
+
+            // Send welcome email to newly registered user
+            try {
+                $user->notify(new WelcomeNotification());
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to send WelcomeNotification in CheckoutSummary', [
+                    'user_id' => $user->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
         }
 
         $this->checkout();

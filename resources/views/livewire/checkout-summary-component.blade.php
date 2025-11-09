@@ -61,7 +61,7 @@
                 @endif
             </div>
             <div class="text-right">
-                @php($type = $domainInfo['type'] ?? $domainInfo['domain_type'] ?? '')
+                @php $type = $domainInfo['type'] ?? $domainInfo['domain_type'] ?? ''; @endphp
                 @if($type === 'new')
                     <p class="text-sm font-medium text-gray-900">Rp {{ number_format($domainAmount, 0, ',', '.') }}</p>
                 @elseif($type === 'existing')
@@ -135,7 +135,6 @@
                            class="sr-only peer" 
                            required>
                     <label for="channel_{{ $channel['code'] }}" 
-                           wire:click="selectPaymentChannel('{{ $channel['code'] }}')"
                            class="block p-4 bg-white border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all duration-200">
                         <div class="flex items-center">
                             <img src="{{ $channel['icon_url'] }}" 
@@ -151,10 +150,15 @@
                                     } else {
                                         $totalFee = $channel['total_fee'];
                                     }
+                                    $customerSplit = round($totalFee / 2);
+                                    $merchantSplit = $totalFee - $customerSplit;
                                 @endphp
                                 @if($totalFee > 0)
                                     <p class="text-xs text-gray-500">
-                                        Biaya: Rp {{ number_format($totalFee, 0, ',', '.') }}
+                                        Biaya Admin (Total): Rp {{ number_format($totalFee, 0, ',', '.') }}
+                                    </p>
+                                    <p class="text-[11px] text-gray-500">
+                                        Skema 50:50 → Pelanggan: Rp {{ number_format($customerSplit, 0, ',', '.') }}, Merchant: Rp {{ number_format($merchantSplit, 0, ',', '.') }}
                                     </p>
                                 @endif
                             </div>

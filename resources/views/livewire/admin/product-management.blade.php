@@ -322,10 +322,11 @@
                                     wire:model="billing_cycle"
                                     class="select select-bordered focus:select-primary @error('billing_cycle') select-error @enderror"
                                 >
-                                    <option value="monthly">📅 Bulanan</option>
-                                    <option value="quarterly">📅 Triwulan (3 bulan)</option>
-                                    <option value="semi_annually">📅 Semester (6 bulan)</option>
+                                    <option value="monthly">📅 Bulanan (1 bulan)</option>
+                                    <option value="6_months">📅 Semester (6 bulan)</option>
                                     <option value="annually">📅 Tahunan (12 bulan)</option>
+                                    <option value="2_years">📅 2 Tahunan (24 bulan)</option>
+                                    <option value="3_years">📅 3 Tahunan (36 bulan)</option>
                                 </select>
                                 @error('billing_cycle')
                                     <label class="label">

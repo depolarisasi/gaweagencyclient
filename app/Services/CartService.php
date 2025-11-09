@@ -26,42 +26,8 @@ class CartService
         } else {
             $sessionId = $request->session()->getId();
             $cart = Cart::findOrCreateForSession($sessionId);
-            
-            // If a new cart was created, try to find an existing cart with data 
-            // (fallback for session issues in testing)
-            if ($cart->wasRecentlyCreated) {
-                // Look for a recent cart with complete data (template, subscription, customer info, domain)
-                $existingCart = Cart::where('user_id', null) // Guest carts only
-                    ->where('created_at', '>=', now()->subHours(2)) // Recent carts only
-                    ->whereNotNull('template_id')
-                    ->whereNotNull('subscription_plan_id')
-                    ->whereNotNull('configuration')
-                    ->whereNotNull('domain_data')
-                    ->notExpired()
-                    ->orderBy('updated_at', 'desc')
-                    ->first();
-                
-                if ($existingCart) {
-                    \Log::info('Found existing cart with complete data, using instead of new cart:', [
-                        'new_cart_id' => $cart->id,
-                        'existing_cart_id' => $existingCart->id,
-                        'session_id' => $sessionId,
-                        'existing_cart_template' => $existingCart->template_id,
-                        'existing_cart_subscription' => $existingCart->subscription_plan_id
-                    ]);
-                    
-                    // Delete the newly created cart and use the existing one
-                    $cart->delete();
-                    
-                    // Update the existing cart's session ID to current session
-                    $existingCart->session_id = $sessionId;
-                    $existingCart->expires_at = now()->addDays(7);
-                    $existingCart->save();
-                    
-                    $cart = $existingCart;
-                }
-            }
-            
+            // Penting: Jangan mengambil keranjang tamu lain sebagai fallback.
+            // Untuk guest baru, selalu gunakan keranjang kosong untuk mencegah salah alur checkout.
             \Log::info('Cart for session:', ['session_id' => $sessionId, 'cart_id' => $cart->id, 'cart_exists' => $cart->wasRecentlyCreated ? 'new' : 'existing']);
             return $cart;
         }
@@ -122,6 +88,23 @@ class CartService
         if ($billingCycle && !$cart->billing_cycle) {
             $cart->billing_cycle = $billingCycle;
             $hasChanges = true;
+        }
+
+        // Auto-populate customer_info for authenticated users if not present
+        if (empty($customerInfo) && Auth::check()) {
+            $user = Auth::user();
+            $customerInfo = [
+                'full_name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone ?? '',
+                'company' => $user->company ?? '',
+                'user_id' => $user->id,
+                'is_logged_in' => true,
+            ];
+            // Clear one-time flag if set
+            if (Session::get('user_just_logged_in')) {
+                Session::forget('user_just_logged_in');
+            }
         }
 
         if ($customerInfo && empty($cart->configuration['customer_info'])) {

@@ -17,6 +17,8 @@ use App\Http\Controllers\Client\DashboardController as ClientDashboardController
 use App\Http\Controllers\Client\SupportTicketController as ClientSupportTicketController;
 
 use App\Http\Controllers\PaymentController;
+use App\Models\Invoice;
+use App\Models\User;
 
 
 
@@ -32,6 +34,56 @@ Route::get('/templates/{template}', [\App\Http\Controllers\TemplateController::c
 
 // Payment routes (public for callback)
 Route::post('/payment/callback', [PaymentController::class, 'handleCallback'])->name('payment.callback');
+
+// Debug email preview (local only)
+if (app()->environment('local')) {
+    Route::prefix('debug/email')->group(function () {
+        // Payment Successful preview by invoice id
+        Route::get('/payment-success/{invoice?}', function (?Invoice $invoice) {
+            if (!$invoice) {
+                $invoice = Invoice::with(['user', 'order'])
+                    ->orderByDesc('id')
+                    ->first() ?? new Invoice([
+                        'invoice_number' => 'INV' . now()->format('Ymd') . '0001',
+                        'amount' => 150000,
+                        'tax_amount' => 0,
+                        'total_amount' => 150000,
+                        'status' => 'sent',
+                    ]);
+                if (!$invoice->user) {
+                    $invoice->setRelation('user', new User(['name' => 'Sample User', 'email' => 'sample@example.com']));
+                }
+            }
+            return view('emails.payment_successful', [
+                'user' => $invoice->user,
+                'invoice' => $invoice,
+            ]);
+        })->name('debug.email.payment-success');
+
+        // Order Created with Invoice preview by invoice id
+        Route::get('/order-created/{invoice?}', function (?Invoice $invoice) {
+            if (!$invoice) {
+                $invoice = Invoice::with(['user', 'order'])
+                    ->orderByDesc('id')
+                    ->first() ?? new Invoice([
+                        'invoice_number' => 'INV' . now()->format('Ymd') . '0001',
+                        'amount' => 150000,
+                        'tax_amount' => 0,
+                        'total_amount' => 150000,
+                        'status' => 'sent',
+                    ]);
+                if (!$invoice->user) {
+                    $invoice->setRelation('user', new User(['name' => 'Sample User', 'email' => 'sample@example.com']));
+                }
+            }
+            return view('emails.order_created_with_invoice', [
+                'user' => $invoice->user,
+                'order' => $invoice->order,
+                'invoice' => $invoice,
+            ]);
+        })->name('debug.email.order-created');
+    });
+}
 
 // Authentication routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
@@ -243,8 +295,13 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 })->name('dashboard');
 
 Route::prefix('checkout')->name('checkout.')->group(function () {
-    // Step 1: Template Selection
+    // Step 1: Domain (start) & Template Selection
+    // Halaman utama checkout sekarang selalu mengarah ke langkah domain
     Route::get('/', [App\Http\Controllers\CheckoutController::class, 'index'])->name('index');
+    // Halaman pemilihan template sesuai flow baru
+    Route::get('/template', [App\Http\Controllers\CheckoutController::class, 'template'])->name('template');
+    Route::post('/template', [App\Http\Controllers\CheckoutController::class, 'step1'])->name('template.post');
+    // Kompatibilitas lama (opsional): tetap izinkan /step1 untuk POST
     Route::post('/step1', [App\Http\Controllers\CheckoutController::class, 'step1'])->name('step1');
     
     // Step 2: Configure - Billing cycle/subscription plan

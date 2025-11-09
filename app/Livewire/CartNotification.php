@@ -96,11 +96,10 @@ class CartNotification extends Component
             return 'checkout.configure';
         }
 
-        // Step 3: Addons - if no customer info or domain data, go to addons
-        // (addons are optional, so we check if personal info is filled)
+        // Step 3: Configure - jika info personal atau domain belum lengkap, arahkan ke configure
         $customerInfo = $cart->configuration['customer_info'] ?? null;
         if (empty($customerInfo) || empty($cart->domain_data)) {
-            return 'checkout.addon';
+            return 'checkout.configure';
         }
 
         // Step 4: Personal info - if customer info or domain data is incomplete, go to personal-info

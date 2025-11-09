@@ -138,18 +138,10 @@
                     <input type="hidden" name="domain_tld" value="{{ $domainTld }}" id="domain_tld_input">
                     <input type="hidden" name="domain_price" value="{{ is_numeric($domainPrice) ? $domainPrice : '' }}" id="domain_price_input">
 
-                    <div class="flex justify-between pt-6">
-                        <a href="{{ route('checkout.addon') }}" 
-                           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                            Kembali
-                        </a>
-                        
+                    <div class="flex justify-end pt-6">
                         <button type="submit" 
                                 class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            Lanjutkan ke Info Personal
+                            Lanjutkan ke Template
                             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
@@ -179,35 +171,63 @@
 
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
+// Define early so Livewire JS calls won't fail
+window.updateHiddenInputs = function(data) {
+    const domainTypeInput = document.getElementById('domain_type_input');
+    const domainNameInput = document.getElementById('domain_name_input');
+    const domainTldInput = document.getElementById('domain_tld_input');
+    const domainPriceInput = document.getElementById('domain_price_input');
+    if (domainTypeInput && domainNameInput && data) {
+        domainTypeInput.value = data.type || '';
+        domainNameInput.value = data.name || '';
+        if (domainTldInput) {
+            domainTldInput.value = data.tld || '';
+        }
+        if (domainPriceInput) {
+            const priceVal = (data.price !== undefined && data.price !== null) ? data.price : '';
+            domainPriceInput.value = priceVal;
+        }
+        console.log('Hidden inputs updated:', data);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Domain step loaded. Session data:', {!! $debugData !!});
+
+    function ensureHiddenInputsFilled() {
+        const domainTypeInput = document.getElementById('domain_type_input');
+        const domainNameInput = document.getElementById('domain_name_input');
+
+        // If already filled, skip
+        if (domainTypeInput && domainTypeInput.value && domainNameInput && domainNameInput.value && domainNameInput.value.trim() !== '') {
+            return;
+        }
+
+        // Try to infer from visible controls
+        const domainTypeRadio = document.querySelector('input[wire\\:model\\.live="domainType"]:checked');
+        const domainNameField = document.querySelector('input[wire\\:model\\.live\\.debounce\\.500ms="domainName"]');
+        const selectedTldRadio = document.querySelector('input[wire\\:model\\.live="selectedTld"]:checked');
+
+        const inferredType = domainTypeRadio ? domainTypeRadio.value : (window.lastDomainUpdateData ? window.lastDomainUpdateData.type : '');
+        const namePart = domainNameField ? domainNameField.value.trim() : '';
+        const tldPart = selectedTldRadio ? selectedTldRadio.value : '';
+        const inferredName = window.lastDomainUpdateData && window.lastDomainUpdateData.name
+            ? window.lastDomainUpdateData.name
+            : (namePart ? (tldPart ? (namePart + '.' + tldPart) : namePart) : '');
+
+        if (domainTypeInput) domainTypeInput.value = inferredType || domainTypeInput.value || '';
+        if (domainNameInput) domainNameInput.value = inferredName || domainNameInput.value || '';
+    }
 
     function isDomainDataValid() {
         const domainTypeInput = document.getElementById('domain_type_input');
         const domainNameInput = document.getElementById('domain_name_input');
+        // Try to fill missing values from visible controls/session first
+        ensureHiddenInputsFilled();
         // Minimal validasi: type & name wajib ada
         return domainTypeInput && domainNameInput && domainTypeInput.value && domainNameInput.value && domainNameInput.value.trim() !== '';
-    }
-
-    window.updateHiddenInputs = function(data) {
-        const domainTypeInput = document.getElementById('domain_type_input');
-        const domainNameInput = document.getElementById('domain_name_input');
-        const domainTldInput = document.getElementById('domain_tld_input');
-        const domainPriceInput = document.getElementById('domain_price_input');
-        if (domainTypeInput && domainNameInput && data) {
-            domainTypeInput.value = data.type || '';
-            domainNameInput.value = data.name || '';
-            if (domainTldInput) {
-                domainTldInput.value = data.tld || '';
-            }
-            if (domainPriceInput) {
-                const priceVal = (data.price !== undefined && data.price !== null) ? data.price : '';
-                domainPriceInput.value = priceVal;
-            }
-            console.log('Hidden inputs updated:', data);
-        }
     }
 
     document.addEventListener('livewire:init', () => {
@@ -234,6 +254,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     if (form) {
         form.addEventListener('submit', function(e) {
+            // Ensure hidden inputs are synchronized before validation
+            ensureHiddenInputsFilled();
             if (!isDomainDataValid()) {
                 // Inline alert fallback
                 showToast('Silakan pilih dan verifikasi domain terlebih dahulu.', 'error');
@@ -262,4 +284,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endpush
+@endsection

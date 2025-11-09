@@ -25,9 +25,11 @@ class HandleAbandonedCart
             $cart = $this->cartService->getOrCreateCart($request);
             
             // If user just logged in, merge any session cart with user cart
-            if (Auth::check() && $request->session()->has('just_logged_in')) {
+            $justLoggedIn = $request->session()->has('just_logged_in') || $request->session()->has('user_just_logged_in');
+            if (Auth::check() && $justLoggedIn) {
                 $this->mergeSessionCartWithUserCart($request, $cart);
                 $request->session()->forget('just_logged_in');
+                $request->session()->forget('user_just_logged_in');
             }
             
             // Share cart data with views

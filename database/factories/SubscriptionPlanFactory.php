@@ -11,13 +11,13 @@ class SubscriptionPlanFactory extends Factory
 
     public function definition(): array
     {
-        $billingCycle = $this->faker->randomElement(['monthly', '6_months', 'annually', '2_years', '3_years']);
+        // Konsisten dengan enum subscription_plans: monthly, quarterly, semi_annual, annual
+        $billingCycle = $this->faker->randomElement(['monthly', 'quarterly', 'semi_annual', 'annual']);
         $cycleMonths = match($billingCycle) {
             'monthly' => 1,
-            '6_months' => 6,
-            'annually' => 12,
-            '2_years' => 24,
-            '3_years' => 36,
+            'quarterly' => 3,
+            'semi_annual' => 6,
+            'annual' => 12,
         };
 
         return [
@@ -54,18 +54,26 @@ class SubscriptionPlanFactory extends Factory
         ]);
     }
 
-    public function annually(): static
+    public function annual(): static
     {
         return $this->state(fn (array $attributes) => [
-            'billing_cycle' => 'annually',
+            'billing_cycle' => 'annual',
             'cycle_months' => 12,
         ]);
     }
 
-    public function sixMonths(): static
+    public function quarterly(): static
     {
         return $this->state(fn (array $attributes) => [
-            'billing_cycle' => '6_months',
+            'billing_cycle' => 'quarterly',
+            'cycle_months' => 3,
+        ]);
+    }
+
+    public function semiAnnual(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'billing_cycle' => 'semi_annual',
             'cycle_months' => 6,
         ]);
     }

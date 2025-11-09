@@ -14,6 +14,7 @@ use App\Models\Invoice;
 use App\Services\TripayService;
 use App\Services\CartService;
 use App\Helpers\CheckoutCookieHelper;
+use App\Notifications\OrderCreatedWithInvoiceNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -32,9 +33,24 @@ class CheckoutController extends Controller
 
     public function index(Request $request)
     {
-        // Step 1: Template Selection
+        // Mulai selalu dari langkah Domain sesuai flow baru
+        return redirect()->route('checkout.domain');
+    }
+
+    public function template(Request $request)
+    {
+        // Halaman pemilihan template (langkah 2 dalam flow baru)
+        $cart = $this->cartService->migrateFromSessionAndCookies($request);
+
+        // Guard: pastikan domain sudah dipilih sebelumnya
+        if (empty($cart->domain_data)) {
+            return redirect()->route('checkout.domain')->withErrors('Silakan pilih dan verifikasi domain terlebih dahulu.');
+        }
+
         $templates = Template::active()->orderBy('sort_order')->get();
-        return view('checkout.step1', compact('templates'));
+        $selectedTemplateId = $cart->template_id
+            ?: (CheckoutCookieHelper::getTemplateId() ?? $request->query('id') ?? $request->session()->get('checkout.template_id'));
+        return view('checkout.template', compact('templates', 'selectedTemplateId'));
     }
 
     public function step1(Request $request)
@@ -62,37 +78,65 @@ class CheckoutController extends Controller
         // Migrate session data to database cart
         $cart = $this->cartService->migrateFromSessionAndCookies($request);
         
+        // Guard sesuai flow baru: domain & info pelanggan harus sudah ada, dan template dipilih
+        if (!$request->isMethod('post')) {
+            if (empty($cart->domain_data)) {
+                return redirect()->route('checkout.domain')->withErrors('Silakan pilih domain terlebih dahulu.');
+            }
+            if (!$cart->template_id) {
+                return redirect()->route('checkout.template')->withErrors('Silakan pilih template terlebih dahulu.');
+            }
+            if (empty($cart->configuration['customer_info'])) {
+                return redirect()->route('checkout.personal-info')->withErrors('Lengkapi data personal terlebih dahulu.');
+            }
+        }
+        
         if ($request->isMethod('post')) {
-            // Handle POST request - save configuration and redirect to addons
+            // Handle POST request - save configuration and selected add-ons, then redirect to summary
             $request->validate([
-            'subscription_plan_id' => 'required|exists:subscription_plans,id',
-            'billing_cycle' => 'required|in:monthly,6_months,annually,2_years,3_years',
-        ]);
+                'subscription_plan_id' => 'required|exists:subscription_plans,id',
+                'billing_cycle' => 'required|in:monthly,6_months,annually,2_years,3_years',
+                'selected_addons' => 'array',
+                'selected_addons.*' => 'exists:product_addons,id',
+            ]);
 
             // Update cart with subscription plan and billing cycle
             $this->cartService->updateSubscriptionPlan($cart, $request->subscription_plan_id, $request->billing_cycle);
 
+            // Sync selected add-ons (optional)
+            $selectedAddons = $request->input('selected_addons', []);
+            if (!empty($selectedAddons)) {
+                $this->cartService->syncAddons($cart, $selectedAddons);
+            } else {
+                // Clear addons if none selected
+                $cart->clearAddons();
+                $cart->calculateTotals();
+                $cart->save();
+            }
+
             // Store in session and cookies for backward compatibility
             $request->session()->put('checkout.subscription_plan_id', $request->subscription_plan_id);
             $request->session()->put('checkout.billing_cycle', $request->billing_cycle);
+            $request->session()->put('checkout.selected_addons', $selectedAddons);
             CheckoutCookieHelper::storeSubscriptionPlan($request->subscription_plan_id, $request->billing_cycle);
-            
-            return redirect()->route('checkout.addon');
+            CheckoutCookieHelper::storeAddons($selectedAddons);
+
+            return redirect()->route('checkout.summary');
         }
         
         // Handle GET request - display configuration page
-        if (!$cart->template_id) {
-            return redirect()->route('checkout.index')->withErrors('Template belum dipilih.');
-        }
-
         $template = $cart->template;
         if (!$template) {
-            return redirect()->route('checkout.index')->withErrors('Template tidak ditemukan.');
+            return redirect()->route('checkout.template')->withErrors('Template tidak ditemukan.');
         }
         
         $subscriptionPlans = SubscriptionPlan::active()->get();
         
-        return view('checkout.configure', compact('template', 'subscriptionPlans'));
+        // Load available add-ons and pre-selected addon IDs from cart (for single-page flow)
+        $addons = ProductAddon::active()->orderBy('sort_order')->get();
+        $selectedAddonIds = $cart->addons->pluck('id')->toArray();
+
+        return view('checkout.configure', compact('template', 'subscriptionPlans', 'addons', 'selectedAddonIds'));
     }
 
     public function addons(Request $request)
@@ -102,8 +146,18 @@ class CheckoutController extends Controller
         // Get cart and migrate session data if needed
         $cart = $this->cartService->migrateFromSessionAndCookies($request);
         
+        // Guard: domain dan template harus ada
+        if (!$request->isMethod('post')) {
+            if (empty($cart->domain_data)) {
+                return redirect()->route('checkout.domain')->withErrors('Silakan pilih domain terlebih dahulu.');
+            }
+            if (!$cart->template_id) {
+                return redirect()->route('checkout.template')->withErrors('Silakan pilih template terlebih dahulu.');
+            }
+        }
+        
         if ($request->isMethod('post')) {
-            // Handle POST request - save addons and redirect to domain step
+            // Kompatibilitas lama: proses add-ons lalu arahkan ke ringkasan
             $request->validate([
                 'selected_addons' => 'nullable|array',
                 'selected_addons.*' => 'exists:product_addons,id',
@@ -118,33 +172,11 @@ class CheckoutController extends Controller
             CheckoutCookieHelper::storeAddons($selectedAddons);
             $request->session()->put('checkout.selected_addons', $selectedAddons);
             
-            return redirect()->route('checkout.domain');
+            return redirect()->route('checkout.summary');
         }
         
-        // Handle GET request - display addons page
-        // Check if template is selected
-        if (!$cart->template_id) {
-            return redirect()->route('checkout.index')->withErrors('Template belum dipilih.');
-        }
-
-        // Check if subscription plan is selected
-        if (!$cart->subscription_plan_id) {
-            return redirect()->route('checkout.configure')->withErrors('Silakan pilih paket berlangganan terlebih dahulu.');
-        }
-
-        // Get selected template and subscription plan from cart
-        $template = $cart->template;
-        $subscriptionPlan = $cart->subscriptionPlan;
-        $billingCycle = $cart->billing_cycle;
-        
-        if (!$billingCycle) {
-            return redirect()->route('checkout.configure')->withErrors('Silakan pilih billing cycle terlebih dahulu.');
-        }
-        
-        // Get available add-ons (former products)
-        $addons = ProductAddon::active()->orderBy('sort_order')->get();
-        
-        return view('checkout.addon', compact('template', 'subscriptionPlan', 'addons', 'billingCycle'));
+        // Handle GET request - alihkan ke halaman configure (UI add-ons sudah digabung)
+        return redirect()->route('checkout.configure');
     }
 
     public function domain(Request $request)
@@ -200,22 +232,12 @@ class CheckoutController extends Controller
             // Store in cookies for backward compatibility
             CheckoutCookieHelper::storeDomain($domainInfo);
 
-            return redirect()->route('checkout.personal-info')->with('success', 'Domain berhasil disimpan.');
+            // Setelah domain disimpan, arahkan ke langkah pemilihan template (Step 2)
+            return redirect()->route('checkout.template')->with('success', 'Domain berhasil disimpan. Silakan pilih template.');
         }
 
-        // Handle GET request - display domain selection page
-        // Check if template is selected
-        if (!$cart->template_id) {
-            return redirect()->route('checkout.index')->withErrors('Template belum dipilih.');
-        }
-
-        // Check if subscription plan is selected
-        if (!$cart->subscription_plan_id) {
-            return redirect()->route('checkout.configure')->withErrors('Silakan pilih paket berlangganan terlebih dahulu.');
-        }
-
-        $template = $cart->template;
-
+        // Handle GET request - display domain selection page (tanpa guard template/plans)
+        $template = $cart->template; // bisa null, view menangani kondisi ini
         return view('checkout.domain', compact('template'));
     }
 
@@ -274,24 +296,40 @@ class CheckoutController extends Controller
             // Store in cookies for backward compatibility
             CheckoutCookieHelper::storeCustomerInfo($customerInfo);
             
-            return redirect()->route('checkout.summary');
+            // Setelah info personal, lanjutkan ke konfigurasi paket
+            return redirect()->route('checkout.configure');
         }
         
         // Handle GET request - display personal info page
-        // Check if template is selected
-        if (!$cart->template_id) {
-            return redirect()->route('checkout.index')->withErrors('Template belum dipilih.');
+        // Guard sesuai flow: domain dan template harus ada, paket belum wajib
+        if (empty($cart->domain_data)) {
+            return redirect()->route('checkout.domain')->withErrors('Silakan pilih domain terlebih dahulu.');
         }
-
-        // Check if subscription plan is selected
-        if (!$cart->subscription_plan_id) {
-            return redirect()->route('checkout.configure')->withErrors('Silakan pilih paket berlangganan terlebih dahulu.');
+        if (!$cart->template_id) {
+            return redirect()->route('checkout.template')->withErrors('Silakan pilih template terlebih dahulu.');
         }
 
         $template = $cart->template;
         
-        // Get existing customer info from cart for pre-filling form
-        $customerInfo = $cart->configuration['customer_info'] ?? [];
+        // Prefill otomatis untuk user yang sudah login bila belum ada customer_info di cart
+        if (auth()->check() && empty($cart->configuration['customer_info'])) {
+            $user = auth()->user();
+            $autoInfo = [
+                'full_name' => $user->name ?? ($user->full_name ?? ''),
+                'email' => $user->email ?? '',
+                'phone' => $user->phone ?? '',
+                'company' => $user->company ?? '',
+                'user_id' => $user->id ?? null,
+                'is_logged_in' => true,
+            ];
+
+            $this->cartService->updateCustomerInfo($cart, $autoInfo);
+            CheckoutCookieHelper::storeCustomerInfo($autoInfo);
+            $customerInfo = $autoInfo;
+        } else {
+            // Get existing customer info from cart for pre-filling form
+            $customerInfo = $cart->configuration['customer_info'] ?? [];
+        }
         
         return view('checkout.personal-info', compact('template', 'customerInfo'));
     }
@@ -689,6 +727,25 @@ class CheckoutController extends Controller
 
             \Log::info('Committing database transaction');
             DB::commit();
+
+            // Send order created + invoice notification to client
+            try {
+                if ($user) {
+                    $user->notify(new OrderCreatedWithInvoiceNotification($order, $invoice));
+                    \Log::info('OrderCreatedWithInvoiceNotification sent', [
+                        'user_id' => $user->id,
+                        'order_id' => $order->id,
+                        'invoice_id' => $invoice->id
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to send OrderCreatedWithInvoiceNotification', [
+                    'user_id' => $user->id ?? null,
+                    'order_id' => $order->id ?? null,
+                    'invoice_id' => $invoice->id ?? null,
+                    'message' => $e->getMessage()
+                ]);
+            }
 
             \Log::info('Clearing checkout session data and cart');
             // Clear cart from database

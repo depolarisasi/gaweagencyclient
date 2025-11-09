@@ -93,7 +93,7 @@
                     </svg>
                     <div>
                         <div class="font-medium">Catatan</div>
-                        <div class="text-sm">Data domain telah dipilih pada langkah sebelumnya. Jika ingin mengubah domain, klik tombol Kembali untuk kembali ke langkah Domain.</div>
+                        <div class="text-sm">Data sebelumnya telah dipilih (Domain & Template). Jika ingin mengubah pilihan, gunakan tombol Kembali.</div>
                     </div>
                 </div>
 
@@ -259,8 +259,8 @@
                     @endauth
                 </div>
 
-                <div class="flex justify-between pt-6">
-                    <a href="{{ route('checkout.domain') }}" 
+                <div class="flex justify-between pt-6 p-6">
+                    <a href="{{ route('checkout.template') }}" 
                         class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -270,7 +270,7 @@
                     
                     <button type="submit" 
                             class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Lanjutkan ke Ringkasan
+                        Lanjutkan Memilih Paket
                         <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>

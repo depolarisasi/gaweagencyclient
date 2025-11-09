@@ -190,15 +190,27 @@ class CheckoutEndToEndTest extends TestCase
         $response = $this->post('/checkout/addon', [
             'selected_addons' => [$this->addon->id]
         ]);
+        $response->assertRedirect('/checkout/domain');
+
+        // Step 5: Domain
+        $response = $this->get('/checkout/domain');
+        $response->assertStatus(200);
+
+        $response = $this->post('/checkout/domain', [
+            'domain_name' => 'testdomain.com',
+            'domain_type' => 'new'
+        ]);
         $response->assertRedirect('/checkout/personal-info');
 
-        // Step 5: Personal info and domain
+        // Step 6: Personal info
         $response = $this->get('/checkout/personal-info');
         $response->assertStatus(200);
 
         $response = $this->post('/checkout/personal-info', [
-            'domain_name' => 'testdomain.com',
-            'domain_type' => 'new'
+            'full_name' => 'John Doe',
+            'email' => 'john@example.com',
+            'phone' => '081234567890',
+            'company' => 'Test Company'
         ]);
         $response->assertRedirect('/checkout/summary');
 
@@ -283,9 +295,19 @@ class CheckoutEndToEndTest extends TestCase
         $response = $this->post('/checkout/addon', [
             'selected_addons' => []
         ]);
+        $response->assertRedirect('/checkout/domain');
+
+        // Step 4: Domain
+        $response = $this->get('/checkout/domain');
+        $response->assertStatus(200);
+
+        $response = $this->post('/checkout/domain', [
+            'domain_name' => 'guestdomain.com',
+            'domain_type' => 'new'
+        ]);
         $response->assertRedirect('/checkout/personal-info');
 
-        // Step 4: Personal info and domain (with user registration data)
+        // Step 5: Personal info (with user registration data)
         $response = $this->get('/checkout/personal-info');
         $response->assertStatus(200);
 
@@ -294,9 +316,7 @@ class CheckoutEndToEndTest extends TestCase
             'email' => 'guest@example.com',
             'phone' => '081234567891',
             'password' => 'password123',
-            'password_confirmation' => 'password123',
-            'domain_name' => 'guestdomain.com',
-            'domain_type' => 'new'
+            'password_confirmation' => 'password123'
         ]);
         $response->assertRedirect('/checkout/summary');
 

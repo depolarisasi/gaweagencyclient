@@ -67,11 +67,11 @@
         </div>
         @endif
 
-        <!-- Subscription Plans -->
+        <!-- Subscription Plans & Add-ons -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Pilih Paket Berlangganan</h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Pilih Paket Berlangganan & Add-ons</h2>
             
-            <form action="{{ route('checkout.configure') }}" method="POST" id="configureForm">
+            <form action="{{ route('checkout.configure.post') }}" method="POST" id="configureForm">
                 @csrf
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
@@ -132,9 +132,53 @@
                     <div class="text-red-600 text-sm mb-4">{{ $message }}</div>
                 @enderror
 
+                <!-- Add-ons (Optional) -->
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Pilih Add-ons (Opsional)</h3>
+                    @if(isset($addons) && $addons->count() > 0)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($addons as $addon)
+                                <label class="border border-gray-200 rounded-lg p-4 flex items-start gap-3 hover:border-blue-500">
+                                    <input type="checkbox" name="selected_addons[]" value="{{ $addon->id }}" class="mt-1"
+                                           @if(isset($selectedAddonIds) && in_array($addon->id, $selectedAddonIds)) checked @endif>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-medium text-gray-900">{{ $addon->name }}</span>
+                                            <span class="text-sm font-semibold text-blue-600">Rp {{ number_format($addon->price) }}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-700 mt-1">{{ $addon->description }}</p>
+                                        @php
+                                            $addonFeatures = is_array($addon->features) ? $addon->features : (is_string($addon->features) ? json_decode($addon->features, true) : []);
+                                            if (!is_array($addonFeatures)) { $addonFeatures = []; }
+                                        @endphp
+                                        @if(!empty($addonFeatures))
+                                            <ul class="mt-2 text-xs text-gray-600 space-y-1">
+                                                @foreach($addonFeatures as $feature)
+                                                    <li class="flex items-center">
+                                                        <svg class="w-3 h-3 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        {{ $feature }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-sm text-gray-600">Tidak ada add-ons tersedia saat ini.</div>
+                    @endif
+
+                    @error('selected_addons')
+                        <div class="text-red-600 text-sm mt-3">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <!-- Navigation -->
                 <div class="flex justify-between items-center pt-6 border-t border-gray-200">
-                    <a href="{{ route('checkout.index') }}" 
+                    <a href="{{ route('checkout.personal-info') }}" 
                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -144,7 +188,7 @@
                     
                     <button type="submit" id="nextButton" disabled
                             class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                        Lanjutkan
+                        Lanjut ke Ringkasan
                         <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
