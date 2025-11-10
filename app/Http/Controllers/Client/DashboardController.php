@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\OrderAddon;
 use App\Models\Project;
 use App\Models\Invoice;
 use App\Models\Product;
@@ -22,7 +23,7 @@ class DashboardController extends Controller
             'total_orders' => Order::where('user_id', $user->id)->count(),
             'active_projects' => Project::where('user_id', $user->id)->where('status', 'in_progress')->count(),
             'completed_projects' => Project::where('user_id', $user->id)->where('status', 'completed')->count(),
-            'pending_invoices' => Invoice::where('user_id', $user->id)->where('status', 'pending')->count(),
+            'pending_invoices' => Invoice::where('user_id', $user->id)->where('status', 'sent')->count(),
         ];
         
         $recent_projects = Project::where('user_id', $user->id)->latest()->take(5)->get();
@@ -40,8 +41,60 @@ class DashboardController extends Controller
     public function orders()
     {
         $user = auth()->user();
-        $orders = Order::where('user_id', $user->id)->with(['product'])->latest()->paginate(10);
+        $orders = Order::where('user_id', $user->id)
+            ->with(['product', 'subscriptionPlan', 'template'])
+            ->latest()
+            ->paginate(10);
         return view('client.orders', compact('orders'));
+    }
+
+    public function showOrder(Order $order)
+    {
+        if ($order->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized access to order.');
+        }
+
+        $order->load([
+            'product',
+            'subscriptionPlan',
+            'template',
+            'orderAddons.productAddon',
+        ]);
+
+        return view('client.orders.show', compact('order'));
+    }
+
+    public function cancelAddon(Request $request, Order $order, OrderAddon $orderAddon)
+    {
+        if ($order->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized access to order.');
+        }
+
+        if ($orderAddon->order_id !== $order->id) {
+            abort(404, 'Addon tidak ditemukan untuk order ini.');
+        }
+
+        if ($orderAddon->status === 'cancelled') {
+            alert()->info('Info', 'Add-on sudah berstatus cancelled.');
+            return redirect()->route('client.orders.show', $order);
+        }
+
+        // Jika recurring (billing_cycle ada), tandai cancel di akhir periode
+        if (!empty($orderAddon->billing_cycle)) {
+            $orderAddon->cancel_at_period_end = true;
+            $orderAddon->save();
+            alert()->success('Berhasil', 'Add-on akan dibatalkan di akhir periode berjalan.');
+        } else {
+            // One-time: batalkan segera
+            $orderAddon->status = 'cancelled';
+            $orderAddon->cancelled_at = now();
+            $orderAddon->cancel_at_period_end = false;
+            $orderAddon->next_due_date = null;
+            $orderAddon->save();
+            alert()->success('Berhasil', 'Add-on one-time dibatalkan sekarang.');
+        }
+
+        return redirect()->route('client.orders.show', $order);
     }
     
     public function projects()
@@ -78,7 +131,7 @@ class DashboardController extends Controller
         $invoices = Invoice::where('user_id', $user->id)->with(['order.product'])->latest()->paginate(10);
         
         // Calculate stats
-        $pendingCount = Invoice::where('user_id', $user->id)->where('status', 'pending')->count();
+        $pendingCount = Invoice::where('user_id', $user->id)->where('status', 'sent')->count();
         $paidCount = Invoice::where('user_id', $user->id)->where('status', 'paid')->count();
         $totalAmount = 'Rp ' . number_format(
             Invoice::where('user_id', $user->id)->where('status', 'paid')->sum('total_amount'), 

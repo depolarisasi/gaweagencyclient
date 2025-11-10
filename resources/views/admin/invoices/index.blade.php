@@ -55,7 +55,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600 mb-1">Pending Payment</p>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Sent</p>
                             <p class="text-3xl font-bold text-gray-900">{{ \App\Models\Invoice::where('status', 'sent')->count() }}</p>
                         </div>
                         <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -199,7 +199,7 @@
                                         </span>
                                     @elseif($invoice->status === 'sent')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                            <i class="fas fa-clock mr-1"></i>Pending
+                                            <i class="fas fa-clock mr-1"></i>Sent
                                         </span>
                                     @elseif($invoice->status === 'overdue')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">

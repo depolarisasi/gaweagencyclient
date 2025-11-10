@@ -70,6 +70,29 @@ class CheckoutCookieHelper
     }
 
     /**
+     * Force clear ALL checkout cookies including payment-related data.
+     * Use this when user navigates back from billing and we want a fresh start.
+     */
+    public static function clearAllForce(): void
+    {
+        $keys = [
+            'template_id',
+            'subscription_plan_id',
+            'billing_cycle',
+            'selected_addons',
+            'customer_info',
+            'domain',
+            'payment_channel',
+            'tripay_transaction',
+            'tripay_reference'
+        ];
+
+        foreach ($keys as $key) {
+            self::forget($key);
+        }
+    }
+
+    /**
      * Store template selection
      */
     public static function storeTemplate(int $templateId): void

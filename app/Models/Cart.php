@@ -133,8 +133,10 @@ class Cart extends Model
 
         $this->domain_amount = $domainAmount;
         $this->subtotal = ($this->template_amount ?? 0) + ($this->addons_amount ?? 0) + $this->domain_amount;
-        $this->customer_fee = $this->subtotal * 0.03; // 3% customer fee
-        $this->total_amount = $this->subtotal + $this->customer_fee;
+        // Jangan menambahkan biaya platform ke total yang dikirim ke Tripay.
+        // Tripay akan menghitung fee_customer sendiri berdasarkan metode pembayaran.
+        $this->customer_fee = 0.0;
+        $this->total_amount = $this->subtotal;
     }
 
     public function addAddon(ProductAddon $addon): void

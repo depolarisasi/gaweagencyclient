@@ -119,7 +119,7 @@
                                             <div class="text-sm text-gray-600">
                                                 {{ $invoice->due_date->format('d M Y') }}
                                             </div>
-                                            @if($invoice->status === 'pending' && $invoice->due_date < now())
+                                            @if($invoice->status === 'sent' && $invoice->due_date < now())
                                                 <div class="badge badge-error badge-sm mt-1">Overdue</div>
                                             @endif
                                         </td>
@@ -129,7 +129,7 @@
                                             </div>
                                         </td>
                                         <td>
-                                            @if($invoice->status === 'pending')
+                                            @if($invoice->status === 'sent')
                                                 <div class="badge badge-warning">Pending</div>
                                             @elseif($invoice->status === 'paid')
                                                 <div class="badge badge-success">Paid</div>
@@ -146,7 +146,7 @@
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 
-                                                @if($invoice->status === 'pending')
+                                                @if($invoice->status === 'sent')
                                                     <a href="{{ route('client.invoices.payment', $invoice) }}" 
                                                        class="btn btn-sm btn-success" title="Pay Now">
                                                         <i class="fas fa-credit-card"></i>

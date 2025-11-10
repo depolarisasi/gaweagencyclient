@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\Project;
 use App\Services\TripayService;
 use Illuminate\Support\Facades\Notification;
@@ -57,7 +58,7 @@ class PaymentController extends Controller
         ]);
 
         // Check if invoice is still valid
-        if ($invoice->status !== 'pending' || $invoice->due_date < now()) {
+        if ($invoice->status !== 'sent' || $invoice->due_date < now()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invoice sudah tidak valid atau sudah expired.'
@@ -91,7 +92,7 @@ class PaymentController extends Controller
             // Update invoice with payment details
             $invoice->update([
                 'payment_method' => $request->payment_method,
-                'payment_reference' => $tripayResponse['data']['reference'],
+                'tripay_reference' => $tripayResponse['data']['reference'],
                 'payment_url' => $tripayResponse['data']['checkout_url'] ?? null,
                 'payment_code' => $tripayResponse['data']['pay_code'] ?? null,
                 'payment_instructions' => $tripayResponse['data']['instructions'] ?? null,
@@ -155,8 +156,8 @@ class PaymentController extends Controller
         }
 
         try {
-            // Find invoice by payment reference
-            $invoice = Invoice::where('payment_reference', $callbackData['reference'])->first();
+            // Find invoice by Tripay reference
+            $invoice = Invoice::where('tripay_reference', $callbackData['reference'])->first();
             
             if (!$invoice) {
                 Log::warning('Invoice not found for Tripay callback', [
@@ -167,11 +168,12 @@ class PaymentController extends Controller
 
             DB::beginTransaction();
 
-            // Update invoice status based on payment status
-            $this->updateInvoiceStatus($invoice, $callbackData);
+            // Update invoice status based on payment status; only proceed if transitioned to PAID
+            $transitionToPaid = $this->updateInvoiceStatus($invoice, $callbackData);
 
-            // If payment is successful, activate project
-            if ($callbackData['status'] === 'PAID') {
+            // If payment transitioned to paid, activate order & project
+            if ($transitionToPaid) {
+                $this->activateOrder($invoice);
                 $this->activateProject($invoice);
 
                 // Send payment successful notification to client
@@ -216,27 +218,38 @@ class PaymentController extends Controller
     private function updateInvoiceStatus(Invoice $invoice, array $callbackData)
     {
         $statusMapping = config('tripay.status_mapping');
-        $newStatus = $statusMapping[$callbackData['status']] ?? 'pending';
+        $newStatus = $statusMapping[$callbackData['status']] ?? 'sent';
 
+        $previousStatus = $invoice->status;
         $updateData = [
-            'status' => $newStatus,
             'tripay_data' => $callbackData,
         ];
 
         // If payment is successful, record payment details
         if ($callbackData['status'] === 'PAID') {
-            $updateData['paid_at'] = now();
-            $updateData['payment_amount'] = $callbackData['amount_received'] ?? $callbackData['amount'];
+            // Gunakan paid_date agar konsisten dengan model & tampilan
+            $updateData['paid_date'] = now();
+            // Amount akan ditampilkan dari tripay_data (amount_received)
         }
 
-        $invoice->update($updateData);
+        // Update status hanya jika berubah
+        if ($newStatus !== $previousStatus) {
+            $updateData['status'] = $newStatus;
+            $invoice->update($updateData);
+            
+            Log::info('Invoice status updated', [
+                'invoice_id' => $invoice->id,
+                'old_status' => $previousStatus,
+                'new_status' => $newStatus,
+                'payment_status' => $callbackData['status']
+            ]);
+        } else {
+            // Tetap sinkronkan tripay_data meski status sama
+            $invoice->update(['tripay_data' => $callbackData] + ($updateData['paid_date'] ?? []));
+        }
 
-        Log::info('Invoice status updated', [
-            'invoice_id' => $invoice->id,
-            'old_status' => $invoice->getOriginal('status'),
-            'new_status' => $newStatus,
-            'payment_status' => $callbackData['status']
-        ]);
+        // Return true jika terjadi transisi ke paid
+        return ($previousStatus !== 'paid' && $newStatus === 'paid');
     }
 
     /**
@@ -256,7 +269,80 @@ class PaymentController extends Controller
                 'project_id' => $project->id,
                 'invoice_id' => $invoice->id
             ]);
+            return;
         }
+
+        if (!$project) {
+            $order = Order::find($invoice->order_id);
+            if ($order) {
+                $projectName = $this->generateProjectName($order);
+                $websiteUrl = $order->domain_name ? ('https://' . $order->domain_name) : null;
+
+                $project = Project::create([
+                    'project_name' => $projectName,
+                    'user_id' => $order->user_id,
+                    'order_id' => $order->id,
+                    'template_id' => $order->template_id,
+                    'status' => 'active',
+                    'website_url' => $websiteUrl,
+                    'start_date' => now(),
+                ]);
+
+                Log::info('Project auto-created & activated after payment', [
+                    'project_id' => $project->id,
+                    'invoice_id' => $invoice->id,
+                    'order_id' => $order->id,
+                ]);
+            }
+        }
+    }
+
+    private function activateOrder(Invoice $invoice)
+    {
+        $order = Order::find($invoice->order_id);
+        if (!$order) { return; }
+
+        // Pastikan order aktif setelah pembayaran
+        if ($order->status !== 'active') {
+            $order->status = 'active';
+            $order->activated_at = $order->activated_at ?? now();
+        }
+
+        // Update next_due_date ke akhir periode penagihan invoice
+        if ($invoice->billing_period_end) {
+            $order->next_due_date = $invoice->billing_period_end;
+        } else {
+            // fallback
+            $order->next_due_date = $order->calculateNextDueDate();
+        }
+        $order->save();
+
+        Log::info('Order activated/updated after payment', [
+            'order_id' => $order->id,
+            'invoice_id' => $invoice->id,
+            'next_due_date' => $order->next_due_date,
+        ]);
+    }
+
+    private function generateProjectName(Order $order): string
+    {
+        $baseName = '';
+
+        if ($order->domain_name) {
+            $baseName = 'Website for ' . $order->domain_name;
+        } elseif ($order->template) {
+            $baseName = $order->template->name . ' Project';
+        } elseif ($order->product) {
+            $baseName = $order->product->name . ' Project';
+        } else {
+            $baseName = 'Project';
+        }
+
+        if ($order->user) {
+            $baseName .= ' for ' . $order->user->name;
+        }
+
+        return $baseName;
     }
 
     /**
@@ -285,20 +371,50 @@ class PaymentController extends Controller
      */
     public function checkPaymentStatus(Invoice $invoice)
     {
-        if (!$invoice->payment_reference) {
+        if (!$invoice->tripay_reference) {
             return response()->json([
                 'success' => false,
                 'message' => 'Payment reference not found'
             ], 404);
         }
 
-        $tripayResponse = $this->tripayService->getTransactionDetail($invoice->payment_reference);
+        $tripayResponse = $this->tripayService->getTransactionDetail($invoice->tripay_reference);
         
         if (!$tripayResponse || !$tripayResponse['success']) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to check payment status'
             ], 500);
+        }
+
+        // Fallback: jika status dari Tripay adalah final (PAID/EXPIRED/FAILED), sinkronkan status invoice
+        try {
+            $status = $tripayResponse['data']['status'] ?? null;
+            if (in_array($status, ['PAID', 'EXPIRED', 'FAILED', 'REFUND'])) {
+                // Update status invoice; hanya lanjut jika transisi ke paid
+                $transitionToPaid = $this->updateInvoiceStatus($invoice, $tripayResponse['data']);
+
+                if ($transitionToPaid) {
+                    $this->activateOrder($invoice);
+                    $this->activateProject($invoice);
+                    try {
+                        if ($invoice->user) {
+                            $invoice->user->notify(new PaymentSuccessful($invoice));
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning('Failed to send PaymentSuccessful notification (polling)', [
+                            'invoice_id' => $invoice->id,
+                            'user_id' => $invoice->user_id,
+                            'message' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('checkPaymentStatus fallback update failed', [
+                'invoice_id' => $invoice->id,
+                'message' => $e->getMessage(),
+            ]);
         }
 
         return response()->json([

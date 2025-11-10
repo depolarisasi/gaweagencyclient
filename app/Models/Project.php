@@ -23,6 +23,7 @@ class Project extends Model
         'admin_username',
         'admin_password',
         'notes',
+        'start_date',
         'started_at',
         'completed_at',
     ];
@@ -30,6 +31,7 @@ class Project extends Model
     protected function casts(): array
     {
         return [
+            'start_date' => 'date',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
             'additional_access' => 'array',

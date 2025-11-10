@@ -19,7 +19,7 @@
                         <i class="fas fa-arrow-left mr-2"></i>
                         Back to Invoices
                     </a>
-                    @if($invoice->status === 'pending')
+                    @if(in_array($invoice->status, ['sent','overdue']))
                         <a href="{{ route('client.invoices.payment', $invoice) }}" class="btn btn-success">
                             <i class="fas fa-credit-card mr-2"></i>
                             Pay Now
@@ -42,10 +42,12 @@
                                 <p class="text-gray-600">Due Date: {{ $invoice->due_date->format('d M Y') }}</p>
                             </div>
                             <div class="text-right">
-                                @if($invoice->status === 'pending')
+                                @if($invoice->status === 'sent')
                                     <div class="badge badge-warning badge-lg">Pending Payment</div>
                                 @elseif($invoice->status === 'paid')
                                     <div class="badge badge-success badge-lg">Paid</div>
+                                @elseif($invoice->status === 'overdue')
+                                    <div class="badge badge-error badge-lg">Overdue</div>
                                 @elseif($invoice->status === 'cancelled')
                                     <div class="badge badge-error badge-lg">Cancelled</div>
                                 @endif
@@ -102,7 +104,7 @@
                                                     @endif
                                                 </td>
                                                 <td class="text-right font-medium">
-                                                    Rp {{ number_format($invoice->amount, 0, ',', '.') }}
+                                                    Rp {{ number_format($invoice->order->subscription_amount ?? 0, 0, ',', '.') }}
                                                 </td>
                                             </tr>
                                             
@@ -138,14 +140,29 @@
                         <div class="border-t pt-4">
                             <div class="flex justify-end">
                                 <div class="w-64">
+                                    @php
+                                        $order = $invoice->order;
+                                        $subscription = $order->subscription_amount ?? 0;
+                                        $addonsTotal = $order->addons_amount ?? 0;
+                                        $domainTotal = $order->domain_amount ?? 0;
+                                        $subtotalCalc = ($subscription + $addonsTotal + $domainTotal);
+                                        $platformCustomerFee = max(0, ($invoice->total_amount ?? 0) - $subtotalCalc);
+                                    @endphp
                                     <div class="flex justify-between mb-2">
                                         <span class="text-gray-600">Subtotal:</span>
-                                        <span class="font-medium">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</span>
+                                        <span class="font-medium">Rp {{ number_format($subtotalCalc, 0, ',', '.') }}</span>
                                     </div>
                                     <div class="flex justify-between mb-2">
                                         <span class="text-gray-600">Tax (PPN 11%):</span>
                                         <span class="font-medium">Rp {{ number_format($invoice->tax_amount, 0, ',', '.') }}</span>
                                     </div>
+
+                                    @if($platformCustomerFee > 0)
+                                        <div class="flex justify-between mb-2">
+                                            <span class="text-gray-600">Biaya Admin (Platform):</span>
+                                            <span class="font-medium">Rp {{ number_format($platformCustomerFee, 0, ',', '.') }}</span>
+                                        </div>
+                                    @endif
                                     
                                     <!-- Tripay Fee Information -->
                                     @if($invoice->fee_merchant && $invoice->fee_merchant > 0)
@@ -191,7 +208,7 @@
                             Payment Information
                         </h3>
 
-                        @if($invoice->status === 'pending')
+                        @if(in_array($invoice->status, ['sent','overdue']))
                             <div class="alert alert-warning mb-4">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 <div>
@@ -205,11 +222,97 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                            <a href="{{ route('client.invoices.payment', $invoice) }}" class="btn btn-success btn-block mb-4">
-                                <i class="fas fa-credit-card mr-2"></i>
-                                Pay Now
-                            </a>
+
+                            @php
+                                $tripayData = $invoice->tripay_data ?? [];
+                                $expiredAt = isset($tripayData['expired_time']) ? \Carbon\Carbon::createFromTimestamp($tripayData['expired_time']) : null;
+                                $isStillActive = $expiredAt ? $expiredAt->isFuture() : false;
+                                // Nama channel deskriptif
+                                $paymentMethod = $invoice->payment_method ?? null;
+                                $paymentName = $tripayData['payment_name'] ?? ($tripayData['channel_name'] ?? null);
+                                $channelMap = [
+                                    'BRIVA' => 'BRI Virtual Account',
+                                    'BNIVA' => 'BNI Virtual Account',
+                                    'BCAVA' => 'BCA Virtual Account',
+                                    'MANDIRIVA' => 'Mandiri Virtual Account',
+                                    'PERMATAVA' => 'Permata Virtual Account',
+                                    'CIMBNIAGA' => 'CIMB Niaga Virtual Account',
+                                    'MUAMALATVA' => 'Bank Muamalat Virtual Account',
+                                    'QRIS' => 'QRIS',
+                                    'ALFAMART' => 'Alfamart',
+                                    'INDOMARET' => 'Indomaret',
+                                    'OVO' => 'OVO',
+                                    'GOPAY' => 'GoPay',
+                                    'SHOPEEPAY' => 'ShopeePay',
+                                    'DANA' => 'DANA',
+                                    'LINKAJA' => 'LinkAja',
+                                ];
+                                $displayChannel = $paymentName ?: ($paymentMethod ? ($channelMap[$paymentMethod] ?? $paymentMethod) : 'Tidak diketahui');
+                            @endphp
+
+                            @if($invoice->tripay_reference && !empty($tripayData) && $isStillActive)
+                                <div class="bg-white rounded-lg border p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div>
+                                            <div class="text-sm text-gray-600">Tripay Reference</div>
+                                            <div class="font-mono text-xs">{{ $invoice->tripay_reference }}</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-sm text-gray-600">Expires</div>
+                                            <div class="font-medium">{{ $expiredAt->format('d M Y, H:i') }} WIB</div>
+                                            <div class="text-sm text-gray-600 mt-2">Sisa Waktu</div>
+                                            <div id="tripay-countdown" class="font-medium text-red-600">—</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div>
+                                            <div class="text-sm text-gray-600">Metode Pembayaran</div>
+                                            <div class="font-medium">{{ $displayChannel }}</div>
+                                        </div>
+                                    </div>
+
+                                    @if(isset($tripayData['pay_code']))
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                                            <div class="flex items-center justify-between">
+                                                <div class="text-center w-full">
+                                                    <div class="text-xs text-gray-600">Virtual Account Number</div>
+                                                    <div class="text-2xl font-bold text-primary font-mono tracking-wider">{{ $tripayData['pay_code'] }}</div>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <button type="button" class="btn btn-outline btn-sm" onclick="copyTripayPayCode('{{ $tripayData['pay_code'] }}')">
+                                                        <i class="fas fa-copy mr-1"></i> Salin
+                                                    </button>
+                                                    <span id="tripay-copy-feedback" class="text-xs text-green-600 ml-2" style="display:none;">Tersalin</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if(isset($tripayData['qr_url']))
+                                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+                                            <div class="text-center">
+                                                <div class="text-xs text-gray-600">Scan QR untuk membayar</div>
+                                                <img src="{{ $tripayData['qr_url'] }}" alt="QR Code" class="mx-auto max-w-48 border rounded" />
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <div class="text-center">
+                                        <button class="btn btn-outline btn-sm" onclick="checkInvoicePaymentStatus(this)">
+                                            <i class="fas fa-sync-alt mr-1"></i> Check Payment Status
+                                        </button>
+                                        <a href="{{ route('client.invoices.payment.instructions', $invoice) }}" class="btn btn-outline btn-sm ml-2">
+                                            <i class="fas fa-info-circle mr-1"></i> Lihat Instruksi
+                                        </a>
+                                    </div>
+                                </div>
+                            @else
+                                <a href="{{ route('client.invoices.payment', $invoice) }}" class="btn btn-success btn-block mb-4">
+                                    <i class="fas fa-credit-card mr-2"></i>
+                                    Bayar Sekarang
+                                </a>
+                            @endif
                         @elseif($invoice->status === 'paid')
                             <div class="alert alert-success mb-4">
                                 <i class="fas fa-check-circle"></i>
@@ -230,17 +333,21 @@
                                     <div class="font-medium">{{ strtoupper($invoice->payment_method) }}</div>
                                 </div>
                                 
-                                @if($invoice->payment_reference)
+                                @if($invoice->tripay_reference)
                                     <div>
                                         <span class="text-sm text-gray-600">Reference:</span>
-                                        <div class="font-medium text-xs">{{ $invoice->payment_reference }}</div>
+                                        <div class="font-medium text-xs">{{ $invoice->tripay_reference }}</div>
                                     </div>
                                 @endif
                                 
-                                @if($invoice->payment_amount)
+                                @php
+                                    $paidAmount = $invoice->payment_amount
+                                        ?? ($invoice->tripay_data['amount_received'] ?? null);
+                                @endphp
+                                @if($paidAmount)
                                     <div>
                                         <span class="text-sm text-gray-600">Amount Paid:</span>
-                                        <div class="font-medium">Rp {{ number_format($invoice->payment_amount, 0, ',', '.') }}</div>
+                                        <div class="font-medium">Rp {{ number_format($paidAmount, 0, ',', '.') }}</div>
                                     </div>
                                 @endif
                             </div>
@@ -253,6 +360,14 @@
                                 <i class="fas fa-print mr-2"></i>
                                 Print Invoice
                             </button>
+                            <a href="{{ route('client.invoices.download', $invoice) }}" target="_blank" class="btn btn-outline btn-block">
+                                <i class="fas fa-file-pdf mr-2"></i>
+                                Buka PDF Invoice
+                            </a>
+                            <button type="button" class="btn btn-outline btn-block" onclick="printPdf('{{ route('client.invoices.download', $invoice) }}')">
+                                <i class="fas fa-file-pdf mr-2"></i>
+                                Cetak PDF Invoice
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -263,8 +378,8 @@
 
 @push('scripts')
 <script>
-// Auto-refresh payment status for pending invoices
-@if($invoice->status === 'pending')
+// Auto-refresh payment status for sent (unpaid) invoices
+@if($invoice->status === 'sent')
 setInterval(function() {
     fetch('{{ route("client.invoices.payment.status", $invoice) }}')
         .then(response => response.json())
@@ -276,5 +391,108 @@ setInterval(function() {
         .catch(error => console.log('Status check failed:', error));
 }, 30000); // Check every 30 seconds
 @endif
+
+// Manual check from button in Tripay panel
+function checkInvoicePaymentStatus(btn) {
+    const originalHtml = btn ? btn.innerHTML : null;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading loading-spinner loading-xs mr-1"></span> Memeriksa...';
+    }
+
+    fetch('{{ route("client.invoices.payment.status", $invoice) }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const status = (data.data && data.data.status) ? data.data.status : 'UNKNOWN';
+                if (status === 'PAID') {
+                    location.reload();
+                } else if (status === 'EXPIRED') {
+                    alert('Pembayaran kedaluwarsa. Silakan buat transaksi baru.');
+                } else if (status === 'FAILED' || status === 'REFUND') {
+                    alert('Transaksi tidak berhasil (' + status + '). Silakan coba metode lain.');
+                } else {
+                    alert('Status pembayaran: ' + status);
+                }
+            } else {
+                alert('Gagal memeriksa status pembayaran');
+            }
+        })
+        .catch(error => alert('Terjadi kesalahan saat memeriksa status: ' + error))
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        });
+}
+
+function printPdf(url) {
+    const w = window.open(url, '_blank');
+    if (!w) {
+        alert('Pop-up diblokir. Mohon izinkan pop-up untuk mencetak PDF.');
+        return;
+    }
+    // Coba trigger print setelah viewer siap
+    setTimeout(() => {
+        try { w.focus(); w.print(); } catch (e) {
+            console.log('Auto-print gagal, silakan gunakan ikon print di viewer.', e);
+        }
+    }, 1500);
+}
+
+// Countdown Tripay expiry
+function startTripayCountdown(expiredTs) {
+    const el = document.getElementById('tripay-countdown');
+    if (!el) return;
+    const expiryMs = expiredTs * 1000;
+    function update() {
+        const remainingMs = expiryMs - Date.now();
+        if (remainingMs <= 0) {
+            el.textContent = 'Kedaluwarsa';
+            alert('Waktu pembayaran sudah habis. Silakan buat transaksi baru.');
+            location.reload();
+            return;
+        }
+        const totalSec = Math.floor(remainingMs / 1000);
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const s = totalSec % 60;
+        el.textContent = (h > 0 ? (h + 'j ') : '') + (m + 'm ') + (s + 's');
+    }
+    update();
+    setInterval(update, 1000);
+}
+
+// Initialize countdown when applicable
+@if($invoice->status === 'sent' && $invoice->tripay_reference && !empty($tripayData) && isset($tripayData['expired_time']))
+    startTripayCountdown({{ $tripayData['expired_time'] }});
+@endif
+
+// Copy VA pay_code to clipboard
+function copyTripayPayCode(code) {
+    const feedback = document.getElementById('tripay-copy-feedback');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => {
+            if (feedback) { feedback.style.display = 'inline'; }
+            setTimeout(() => { if (feedback) { feedback.style.display = 'none'; } }, 1500);
+        }).catch(() => {
+            fallbackCopy(code, feedback);
+        });
+    } else {
+        fallbackCopy(code, feedback);
+    }
+}
+
+function fallbackCopy(text, feedback) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    if (feedback) { feedback.style.display = 'inline'; }
+    setTimeout(() => { if (feedback) { feedback.style.display = 'none'; } }, 1500);
+}
 </script>
 @endpush

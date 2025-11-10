@@ -100,17 +100,31 @@ class TripayService
             
             Log::info('TripayService signature generated', ['signature' => $signature]);
 
+            // Ensure required optional fields have sensible defaults
+            if (empty($data['callback_url'])) {
+                $defaultCallback = config('tripay.callback_url');
+                // Fallback to internal callback route if config is not set
+                $data['callback_url'] = $defaultCallback ?: route('payment.callback');
+            }
+            if (empty($data['return_url'])) {
+                // Fallback to home if return_url not provided
+                $data['return_url'] = url('/');
+            }
+            if (empty($data['customer_phone'])) {
+                // Basic phone fallback to avoid Tripay validation failure
+                $data['customer_phone'] = '08123456789';
+            }
+
             Log::info('TripayService making API request', [
                 'url' => $this->baseUrl . '/transaction/create',
                 'headers' => [
                     'Authorization' => 'Bearer ' . substr($this->apiKey, 0, 10) . '...',
-                    'Content-Type' => 'application/json',
                 ]
             ]);
 
-            $response = Http::withHeaders([
+            // Send as JSON to comply with Tripay API expectations
+            $response = Http::asJson()->withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
             ])->post($this->baseUrl . '/transaction/create', $data);
 
             Log::info('TripayService API response received', [
@@ -126,19 +140,43 @@ class TripayService
                 return $responseData;
             }
 
+            // Non-2xx: coba kembalikan JSON error dari Tripay agar controller bisa menampilkan pesan
+            $errorJson = null;
+            try {
+                $errorJson = $response->json();
+            } catch (\Throwable $t) {
+                $errorJson = null;
+            }
+
             Log::error('Tripay createTransaction failed', [
                 'status' => $response->status(),
                 'response' => $response->body(),
                 'data' => $data
             ]);
 
-            return null;
+            if (is_array($errorJson)) {
+                // Tripay biasanya mengirim { success:false, message:"..." }
+                return $errorJson;
+            }
+
+            // Fallback bila body bukan JSON: pulangkan struktur standar dengan pesan ringkas
+            $bodySnippet = substr($response->body() ?? '', 0, 200);
+            return [
+                'success' => false,
+                'message' => 'Tripay error ' . $response->status() . ($bodySnippet ? ' - ' . $bodySnippet : ''),
+                'data' => null,
+            ];
         } catch (Exception $e) {
             Log::error('Tripay createTransaction exception', [
                 'message' => $e->getMessage(),
                 'data' => $data
             ]);
-            return null;
+            // Pastikan selalu mengembalikan struktur yang bisa ditampilkan di UI
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ];
         }
     }
 
@@ -227,28 +265,77 @@ class TripayService
     }
 
     /**
-     * Format transaction data for Tripay API
+     * Format transaction data untuk Tripay API berdasarkan Invoice
      */
     public function formatTransactionData($invoice, $paymentMethod, $customerInfo = [])
     {
+        $order = $invoice->order;
+
+        // Bangun itemisasi transaksi dari order
+        $orderItems = [];
+        if ($order) {
+            if ($order->subscription_amount > 0) {
+                $orderItems[] = [
+                    'sku' => $invoice->invoice_number . '-SUB',
+                    'name' => 'Subscription ' . ($order->template->name ?? 'Website'),
+                    'price' => (int) $order->subscription_amount,
+                    'quantity' => 1,
+                ];
+            }
+            if ($order->domain_amount > 0) {
+                $orderItems[] = [
+                    'sku' => $invoice->invoice_number . '-DOM',
+                    'name' => 'Domain Registration',
+                    'price' => (int) $order->domain_amount,
+                    'quantity' => 1,
+                ];
+            }
+            foreach ($order->orderAddons as $addon) {
+                $orderItems[] = [
+                    'sku' => $invoice->invoice_number . '-ADD-' . $addon->product_addon_id,
+                    'name' => $addon->addon_details['name'] ?? 'Addon',
+                    'price' => (int) $addon->price,
+                    'quantity' => (int) ($addon->quantity ?? 1),
+                ];
+            }
+        }
+
+        if (empty($orderItems)) {
+            // Fallback jika tidak ada order atau item
+            $orderItems[] = [
+                'sku' => $invoice->invoice_number,
+                'name' => 'Invoice ' . $invoice->invoice_number,
+                'price' => (int) $invoice->amount,
+                'quantity' => 1,
+            ];
+        }
+
+        // Gunakan data pelanggan dari invoice->user jika tersedia
+        $user = $invoice->user;
+        $customerName = $customerInfo['name'] ?? ($user->name ?? 'Customer');
+        $customerEmail = $customerInfo['email'] ?? ($user->email ?? 'customer@example.com');
+        $customerPhone = $customerInfo['phone'] ?? ($user->phone ?? '08123456789');
+
         return [
             'method' => $paymentMethod,
             'merchant_ref' => $invoice->invoice_number,
-            'amount' => (int) $invoice->total_amount,
-            'customer_name' => $customerInfo['name'] ?? 'Customer',
-            'customer_email' => $customerInfo['email'] ?? 'customer@example.com',
-            'customer_phone' => $customerInfo['phone'] ?? '08123456789',
-            'order_items' => [
-                [
-                    'sku' => $invoice->invoice_number,
-                    'name' => 'Invoice ' . $invoice->invoice_number,
-                    'price' => (int) $invoice->total_amount,
-                    'quantity' => 1,
-                ]
-            ],
-            'return_url' => route('client.invoices.show', $invoice->id),
+            'amount' => (int) $invoice->amount, // kirim subtotal tanpa fee Tripay
+            'customer_name' => $customerName,
+            'customer_email' => $customerEmail,
+            'customer_phone' => $customerPhone,
+            'order_items' => $orderItems,
+            'return_url' => route('invoice.show', $invoice->id),
             'expired_time' => (int) $invoice->due_date->timestamp,
         ];
+    }
+
+    /**
+     * Buat URL pembayaran dari data Tripay di invoice
+     */
+    public function createPaymentUrl($invoice)
+    {
+        $tripayData = $invoice->tripay_data ?? [];
+        return $tripayData['checkout_url'] ?? null;
     }
 
     /**

@@ -304,8 +304,10 @@ class CartService
         $templateAmount = $cart->template_amount ?? 0;
         $addonsAmount = $cart->addons_amount ?? 0;
         $subtotal = $templateAmount + $addonsAmount + $domainAmount;
-        $customerFee = $subtotal * 0.03; // 3% customer fee
-        $totalAmount = $subtotal + $customerFee;
+        // Jangan menambahkan biaya platform 3% pada ringkasan.
+        // Tripay akan menambahkan fee_customer saat transaksi dibuat.
+        $customerFee = 0.0;
+        $totalAmount = $subtotal;
 
         return [
             'cart' => $cart,

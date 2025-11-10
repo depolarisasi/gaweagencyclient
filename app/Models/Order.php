@@ -187,6 +187,39 @@ class Order extends Model
         return $this->status === 'suspended';
     }
 
+    // Computed attributes for view compatibility
+    public function getCustomerInfoAttribute()
+    {
+        $user = $this->user;
+        return [
+            'full_name' => $user?->name ?? '',
+            'name' => $user?->name ?? '',
+            'email' => $user?->email ?? '',
+            'phone' => $user?->phone ?? '',
+            // Keep backward compatibility: map company_name to company
+            'company' => $user?->company_name ?? '',
+        ];
+    }
+
+    public function getDomainInfoAttribute()
+    {
+        // Normalize domain details for view usage
+        $details = $this->domain_details ?? [];
+        if (!is_array($details)) {
+            return [];
+        }
+        return $details;
+    }
+
+    public function getDomainAmountAttribute()
+    {
+        $details = $this->domain_details ?? [];
+        if (is_array($details) && isset($details['price'])) {
+            return (float) $details['price'];
+        }
+        return 0.0;
+    }
+
     public function calculateNextDueDate()
     {
         if (!$this->activated_at) {
@@ -218,5 +251,24 @@ class Order extends Model
             default:
                 return null;
         }
+    }
+
+    /**
+     * Singular accessors for compatibility with views using $order->invoice / $order->project
+     */
+    public function getInvoiceAttribute()
+    {
+        if ($this->relationLoaded('invoices')) {
+            return $this->invoices->sortByDesc('created_at')->first();
+        }
+        return $this->invoices()->latest()->first();
+    }
+
+    public function getProjectAttribute()
+    {
+        if ($this->relationLoaded('projects')) {
+            return $this->projects->sortByDesc('created_at')->first();
+        }
+        return $this->projects()->latest()->first();
     }
 }

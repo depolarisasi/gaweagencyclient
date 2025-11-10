@@ -14,7 +14,9 @@ Pola Desain:
 
 Relasi Komponen:
 - View `checkout/configure.blade.php` → Controller `CheckoutController@configure` → Service `CartService` → Model/Cart → CookieHelper.
+ - View `checkout/billing.blade.php` → Controller `CheckoutController@billing` → Model `Order` (accessor: `customer_info`, `domain_info`, `domain_amount`) atau `CartService::getCartSummary` bila Order belum ada.
 
 Keputusan Teknis:
 - Redirect `POST /checkout/configure` langsung ke `checkout.summary` agar ringkas.
 - Menjaga kompatibilitas dengan data lama via migrasi dari session/cookies.
+ - Menambahkan accessor di `Order` untuk menjaga KISS dan kompatibilitas view tanpa mengubah controller secara luas.

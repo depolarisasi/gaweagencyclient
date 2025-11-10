@@ -34,23 +34,36 @@ class SuspendOverdueProjects extends Command
         // Find renewal invoices that are overdue by 14 days
         $overdueDate = now()->subDays(14);
         
-        $overdueInvoices = Invoice::where('status', 'pending')
+        $overdueQuery = Invoice::where('status', 'overdue')
             ->where('due_date', '<', $overdueDate)
-            ->whereHas('order', function($query) {
-                // This is a renewal invoice (not the first invoice)
-                $query->where('is_renewal', true);
+            ->where('is_renewal', true)
+            ->whereHas('order', function ($q) {
+                $q->where('order_type', 'subscription');
             })
-            ->with(['order.project'])
-            ->get();
-            
+            ->with(['order.project', 'order'])
+            ->orderBy('id');
+
         $suspendedCount = 0;
-        
-        foreach ($overdueInvoices as $invoice) {
-            try {
-                $project = $invoice->order->project ?? null;
+
+        $overdueQuery->chunkById(100, function ($overdueInvoices) use (&$suspendedCount) {
+            foreach ($overdueInvoices as $invoice) {
+                try {
+                    $order = $invoice->order;
+                    $project = $order->project ?? null;
                 
                 if (!$project) {
-                    $this->warn("No project found for invoice ID: {$invoice->id}");
+                    // Jika tidak ada project, tetap suspend order dan batalkan invoice
+                    if ($order) {
+                        $order->update([
+                            'status' => 'suspended',
+                            'suspended_at' => now(),
+                        ]);
+                    }
+
+                    $invoice->update(['status' => 'cancelled']);
+
+                    $this->warn("No project found for invoice ID: {$invoice->id}. Order suspended and invoice cancelled.");
+                    $suspendedCount++;
                     continue;
                 }
                 
@@ -67,18 +80,25 @@ class SuspendOverdueProjects extends Command
                     'suspension_reason' => 'Renewal invoice overdue by 14+ days',
                     'overdue_invoice_id' => $invoice->id
                 ]);
+
+                // Suspend the order as well (standar: suspended)
+                if ($order) {
+                    $order->update([
+                        'status' => 'suspended',
+                        'suspended_at' => now(),
+                    ]);
+                }
                 
-                // Cancel the overdue invoice
+                // Cancel the overdue invoice (single source of truth H+14)
                 $invoice->update([
                     'status' => 'cancelled',
-                    'cancelled_at' => now(),
-                    'cancellation_reason' => 'Auto-cancelled: Renewal payment overdue by 14+ days, project suspended'
                 ]);
                 
                 $suspendedCount++;
                 
-                Log::info('Project suspended due to overdue renewal invoice', [
+                Log::info('Project/order suspended due to overdue renewal invoice', [
                     'project_id' => $project->id,
+                    'order_id' => $order?->id,
                     'invoice_id' => $invoice->id,
                     'invoice_number' => $invoice->invoice_number,
                     'due_date' => $invoice->due_date,
@@ -96,7 +116,8 @@ class SuspendOverdueProjects extends Command
                     'error' => $e->getMessage()
                 ]);
             }
-        }
+            }
+        });
         
         $this->info("Completed! Suspended {$suspendedCount} projects with overdue renewal invoices.");
         

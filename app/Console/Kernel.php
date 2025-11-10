@@ -17,9 +17,15 @@ class Kernel extends ConsoleKernel
                  ->dailyAt('06:00')
                  ->withoutOverlapping()
                  ->runInBackground();
+
+        // Generate recurring addons invoices daily at 06:10 AM
+        $schedule->command('invoices:generate-recurring-addons')
+                 ->dailyAt('06:10')
+                 ->withoutOverlapping()
+                 ->runInBackground();
         
-        // Cancel expired invoices every hour
-        $schedule->command('invoices:cancel-expired')
+        // Tandai overdue (tanpa cancel) setiap jam
+        $schedule->command('invoices:mark-overdue')
                  ->hourly()
                  ->withoutOverlapping()
                  ->runInBackground();
@@ -30,9 +36,21 @@ class Kernel extends ConsoleKernel
                  ->withoutOverlapping()
                  ->runInBackground();
 
-        // Cancel unpaid invoices daily at 01:00 AM
-        $schedule->command('invoice:cancel-unpaid')
-                 ->dailyAt('01:00')
+        // Auto-cancel overdue add-ons daily at 07:10 AM
+        $schedule->command('addons:cancel-overdue')
+                 ->dailyAt('07:10')
+                 ->withoutOverlapping()
+                 ->runInBackground();
+
+        // Apply cancel-at-period-end daily at 07:15 AM
+        $schedule->command('addons:apply-cancel-at-period-end')
+                 ->dailyAt('07:15')
+                 ->withoutOverlapping()
+                 ->runInBackground();
+
+        // Pengingat invoice harian pukul 08:00
+        $schedule->command('invoices:send-reminders')
+                 ->dailyAt('08:00')
                  ->withoutOverlapping()
                  ->runInBackground();
     }

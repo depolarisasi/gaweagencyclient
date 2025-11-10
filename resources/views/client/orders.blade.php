@@ -92,8 +92,16 @@
                                         <td>
                                             <div class="flex items-center space-x-3">
                                                 <div>
-                                                    <div class="font-medium text-gray-800">{{ $order->product->name ?? 'N/A' }}</div>
-                                                    <div class="text-sm text-gray-500">{{ $order->product->description ?? '' }}</div>
+                                                    <div class="font-medium text-gray-800">
+                                                        {{ $order->product->name ?? ($order->subscriptionPlan->name ?? 'N/A') }}
+                                                    </div>
+                                                    <div class="text-sm text-gray-500">
+                                                        @if($order->template)
+                                                            Template: {{ $order->template->name }}
+                                                        @elseif($order->product)
+                                                            {{ $order->product->description }}
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -133,6 +141,11 @@
                                                         Project
                                                     </a>
                                                 @endif
+                                                <a href="{{ route('client.orders.show', $order) }}" 
+                                                   class="btn btn-sm btn-outline btn-info">
+                                                    <i class="fas fa-info-circle mr-1"></i>
+                                                    Details
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>

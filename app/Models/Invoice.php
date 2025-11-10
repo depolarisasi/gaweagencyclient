@@ -28,6 +28,18 @@ class Invoice extends Model
         'tripay_reference',
         'tripay_response',
         'tripay_data',
+        // Renewal & billing period
+        'is_renewal',
+        'billing_period_start',
+        'billing_period_end',
+        // Renewal type & items snapshot
+        'renewal_type',
+        'items_snapshot',
+        // Payment details
+        'payment_url',
+        'payment_code',
+        'payment_instructions',
+        'payment_expired_at',
     ];
 
     protected function casts(): array
@@ -43,6 +55,12 @@ class Invoice extends Model
             'paid_date' => 'date',
             'tripay_response' => 'array',
             'tripay_data' => 'array',
+            'is_renewal' => 'boolean',
+            'billing_period_start' => 'date',
+            'billing_period_end' => 'date',
+            'payment_instructions' => 'array',
+            'payment_expired_at' => 'datetime',
+            'items_snapshot' => 'array',
         ];
     }
 
@@ -57,6 +75,11 @@ class Invoice extends Model
         return $this->belongsTo(Order::class);
     }
 
+    public function items()
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
+
     // Scopes
     public function scopePaid($query)
     {
@@ -64,6 +87,11 @@ class Invoice extends Model
     }
 
     public function scopePending($query)
+    {
+        return $query->where('status', 'sent');
+    }
+
+    public function scopeSent($query)
     {
         return $query->where('status', 'sent');
     }

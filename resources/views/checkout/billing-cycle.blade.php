@@ -176,7 +176,7 @@
                                 <div class="mb-4 p-3 bg-white border border-gray-300 rounded-lg">
                                     <div class="flex items-center justify-between">
                                         <span class="text-lg font-mono font-bold text-gray-900">{{ $tripayTransaction['pay_code'] }}</span>
-                                        <button onclick="copyToClipboard('{{ $tripayTransaction['pay_code'] }}')" 
+                                        <button onclick="copyToClipboard('{{ $tripayTransaction['pay_code'] }}', this)" 
                                                 class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                             Salin
                                         </button>
@@ -313,10 +313,11 @@
 </div>
 
 <script>
-function copyToClipboard(text) {
+function copyToClipboard(text, buttonEl) {
     navigator.clipboard.writeText(text).then(function() {
         // Show success message
-        const button = event.target;
+        const button = buttonEl || document.activeElement;
+        if (!button) return;
         const originalText = button.textContent;
         button.textContent = 'Tersalin!';
         button.classList.add('text-green-600');

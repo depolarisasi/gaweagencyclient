@@ -31,6 +31,36 @@ class CheckoutController extends Controller
         $this->cartService = $cartService;
     }
 
+    /**
+     * Hitung next_due_date untuk add-on berdasarkan subscription plan.
+     */
+    private function calculateAddonNextDueDate(?\App\Models\SubscriptionPlan $plan, $baseDate)
+    {
+        $date = \Carbon\Carbon::parse($baseDate);
+        if ($plan && $plan->cycle_months) {
+            return $date->copy()->addMonths((int) $plan->cycle_months)->toDateString();
+        }
+
+        // Fallback sederhana berdasarkan billing_cycle bila cycle_months tidak tersedia
+        switch ($plan?->billing_cycle) {
+            case 'monthly':
+                return $date->copy()->addMonth()->toDateString();
+            case 'quarterly':
+                return $date->copy()->addMonths(3)->toDateString();
+            case 'semi_annually':
+            case '6_months':
+                return $date->copy()->addMonths(6)->toDateString();
+            case 'annually':
+                return $date->copy()->addYear()->toDateString();
+            case '2_years':
+                return $date->copy()->addYears(2)->toDateString();
+            case '3_years':
+                return $date->copy()->addYears(3)->toDateString();
+            default:
+                return null;
+        }
+    }
+
     public function index(Request $request)
     {
         // Mulai selalu dari langkah Domain sesuai flow baru
@@ -337,6 +367,21 @@ class CheckoutController extends Controller
     public function summary(Request $request)
     {
         // Step 5: Order Summary - Display summary and handle payment method selection
+        // Server-side guard: jika state billing sudah terbentuk, paksa mulai dari awal
+        $tripayRefCookie = \App\Helpers\CheckoutCookieHelper::getTripayReference();
+        $tripayRefSession = $request->session()->get('checkout.tripay_reference');
+        $tripayTxCookie = \App\Helpers\CheckoutCookieHelper::getTripayTransaction();
+        $tripayTxSession = $request->session()->get('checkout.tripay_transaction');
+
+        if ($tripayRefCookie || $tripayRefSession || $tripayTxCookie || $tripayTxSession) {
+            \Log::info('Summary guard triggered: billing state detected, redirecting to checkout.index', [
+                'tripay_reference_cookie' => (bool) $tripayRefCookie,
+                'tripay_reference_session' => (bool) $tripayRefSession,
+                'tripay_transaction_cookie' => (bool) $tripayTxCookie,
+                'tripay_transaction_session' => (bool) $tripayTxSession,
+            ]);
+            return redirect()->route('checkout.index')->withErrors('Anda sudah berada di tahap pembayaran. Silakan mulai dari awal.');
+        }
         
         // Get cart and migrate session data if needed
         $cart = $this->cartService->migrateFromSessionAndCookies($request);
@@ -482,10 +527,39 @@ class CheckoutController extends Controller
             $domainAmount = $summary['domain_amount'];
             $totalAmount = $summary['total_amount'];
         }
+
+        // Fallback: hitung subtotal add-ons dari relasi jika belum terisi atau nol
+        if ((!isset($addonsAmount) || (float) $addonsAmount <= 0) && isset($addons)) {
+            $calculatedAddonsAmount = 0.0;
+            foreach ($addons as $addon) {
+                $calculatedAddonsAmount += (float) ($addon->pivot->price ?? $addon->price ?? 0);
+            }
+            if ($calculatedAddonsAmount > 0) {
+                $addonsAmount = $calculatedAddonsAmount;
+            }
+        }
         
-        // Add backward compatibility keys for domain info
-        $domainInfo['domain_type'] = $domainInfo['type'] ?? 'new';
-        $domainInfo['domain_name'] = $domainInfo['name'] ?? '';
+        // Normalisasi nama dan tipe domain untuk kompatibilitas tampilan
+        // Nama domain: fallback ke domain_name → name → domain
+        $domainInfo['domain_name'] = $domainInfo['domain_name']
+            ?? $domainInfo['name']
+            ?? ($domainInfo['domain'] ?? '');
+
+        // Tipe domain: normalisasi nilai agar konsisten di view
+        $rawDomainType = $domainInfo['domain_type']
+            ?? $domainInfo['type']
+            ?? ($order ? $order->domain_type : null);
+
+        $normalizedDomainType = match ($rawDomainType) {
+            'register_new' => 'new',
+            'new' => 'new',
+            'existing' => 'existing',
+            'transfer' => 'transfer',
+            default => 'unknown',
+        };
+
+        $domainInfo['domain_type'] = $normalizedDomainType;
+        $domainInfo['type'] = $normalizedDomainType;
         
         // Add customer fee to total amount for display (customer needs to pay this)
         $customerFee = $tripayTransaction['fee_customer'] ?? 0;
@@ -571,7 +645,19 @@ class CheckoutController extends Controller
         
         $subscriptionAmount = $summary['subscription_amount'];
         $addonsAmount = $summary['addons_amount'];
+        $domainAmount = $summary['domain_amount'];
         $totalAmount = $summary['total_amount'];
+
+        // Normalisasi add-ons: gunakan harga pivot (harga aktual di keranjang)
+        $calculatedAddonsAmount = 0.0;
+        foreach ($addons as $addon) {
+            $calculatedAddonsAmount += (float) ($addon->pivot->price ?? $addon->price ?? 0);
+        }
+        if ($calculatedAddonsAmount > 0) {
+            $addonsAmount = $calculatedAddonsAmount;
+        }
+        // Pastikan total sama dengan komponen-komponen
+        $totalAmount = (float) $subscriptionAmount + (float) $domainAmount + (float) $addonsAmount;
 
         try {
             \Log::info('Starting transaction for order creation');
@@ -634,28 +720,67 @@ class CheckoutController extends Controller
                     'billing_cycle' => $subscriptionPlan->billing_cycle,
                     'quantity' => 1,
                     'addon_details' => $addon->toArray(),
+                    // Status awal pending sampai invoice dibayar
+                    'status' => 'pending',
+                    // Inisialisasi tanggal mulai agar tidak null; next_due_date dihitung dari siklus
+                    'started_at' => now(),
+                    'next_due_date' => $this->calculateAddonNextDueDate($subscriptionPlan, now()),
                 ]);
             }
 
             // Create Tripay transaction
             \Log::info('Creating Tripay transaction', ['order_id' => $order->id]);
             $orderCode = 'SUB-' . $order->id . '-' . time();
+            // Bangun itemisasi untuk Tripay agar jelas breakdown biaya
+            $orderItems = [];
+            $orderItems[] = [
+                'sku' => $orderCode . '-SUB',
+                'name' => 'Subscription ' . $template->name,
+                'price' => (int) $subscriptionAmount,
+                'quantity' => 1,
+            ];
+            if ($domainAmount > 0) {
+                $orderItems[] = [
+                    'sku' => $orderCode . '-DOM',
+                    'name' => 'Domain Registration',
+                    'price' => (int) $domainAmount,
+                    'quantity' => 1,
+                ];
+            }
+            foreach ($addons as $addon) {
+                $orderItems[] = [
+                    'sku' => $orderCode . '-ADD-' . $addon->id,
+                    'name' => $addon->name,
+                    // Gunakan harga pivot jika tersedia agar konsisten dengan keranjang
+                    'price' => (int) ($addon->pivot->price ?? $addon->price ?? 0),
+                    'quantity' => 1,
+                ];
+            }
+
+            // Sanity check: pastikan jumlah item sama dengan amount
+            $orderItemsSum = array_reduce($orderItems, function ($carry, $item) {
+                return $carry + ((int) $item['price'] * (int) ($item['quantity'] ?? 1));
+            }, 0);
+            if ($orderItemsSum !== (int) $totalAmount) {
+                \Log::warning('Normalizing amount: order_items sum != amount', [
+                    'order_items_sum' => $orderItemsSum,
+                    'amount_before' => (int) $totalAmount,
+                ]);
+                $totalAmount = (float) $orderItemsSum;
+                // Sinkronkan juga nilai order agar konsisten (sebelum membuat invoice)
+                $order->update(['amount' => (int) $totalAmount]);
+            }
+
             $transactionData = [
                 'method' => $request->input('payment_channel'),
                 'merchant_ref' => $orderCode,
                 'amount' => (int) $totalAmount,
                 'customer_name' => $customerInfo['full_name'] ?? $customerInfo['name'] ?? '',
                 'customer_email' => $customerInfo['email'],
-                'customer_phone' => $customerInfo['phone'],
-                'order_items' => [
-                    [
-                        'sku' => $orderCode,
-                        'name' => 'Subscription ' . $template->name,
-                        'price' => (int) $totalAmount,
-                        'quantity' => 1,
-                    ]
-                ],
+                'customer_phone' => $customerInfo['phone'] ?? '08123456789',
+                'order_items' => $orderItems,
                 'return_url' => route('checkout.success'),
+                'callback_url' => route('payment.callback'),
                 'expired_time' => (int) now()->addHours(24)->timestamp,
             ];
             
@@ -664,8 +789,11 @@ class CheckoutController extends Controller
             \Log::info('Tripay transaction result', ['transaction' => $transaction]);
 
             // Check if transaction creation was successful
-            if (!$transaction) {
-                throw new \Exception('Gagal membuat transaksi pembayaran. Silakan coba lagi.');
+            if (!$transaction || (isset($transaction['success']) && !$transaction['success'])) {
+                $message = is_array($transaction)
+                    ? ($transaction['message'] ?? 'Gagal membuat transaksi pembayaran. Silakan coba lagi.')
+                    : 'Gagal membuat transaksi pembayaran. Silakan coba lagi.';
+                throw new \Exception($message);
             }
 
             \Log::info('Updating order with transaction reference', [
@@ -781,6 +909,48 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Reset seluruh data checkout (session, cookies, cart) untuk memulai dari awal.
+     * Dipanggil saat user mencoba kembali dari halaman billing.
+     */
+    public function reset(Request $request)
+    {
+        \Log::info('Checkout reset triggered');
+
+        try {
+            // Hapus semua cart terkait user/session tanpa membuat cart baru.
+            if (\Illuminate\Support\Facades\Auth::check()) {
+                $userId = \Illuminate\Support\Facades\Auth::id();
+                \App\Models\Cart::forUser($userId)->delete();
+            } else {
+                $sessionId = $request->session()->getId();
+                \App\Models\Cart::forSession($sessionId)->delete();
+            }
+
+            // Bersihkan seluruh data session checkout termasuk payment
+            $request->session()->forget([
+                'checkout.template_id',
+                'checkout.subscription_plan_id',
+                'checkout.billing_cycle',
+                'checkout.customer_info',
+                'checkout.domain',
+                'checkout.selected_addons',
+                'checkout.payment_channel',
+                'checkout.tripay_transaction',
+                'checkout.tripay_reference',
+                'checkout.order_id',
+            ]);
+
+            // Hapus semua cookies checkout termasuk payment
+            \App\Helpers\CheckoutCookieHelper::clearAllForce();
+
+            return response()->json(['success' => true]);
+        } catch (\Throwable $e) {
+            \Log::error('Checkout reset failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Reset gagal'], 500);
+        }
+    }
+
+    /**
      * Create test Tripay data for debugging
      */
     public function createTestTripayData()
@@ -871,6 +1041,103 @@ class CheckoutController extends Controller
                     'success' => false,
                     'message' => 'Failed to check payment status'
                 ], 500);
+            }
+
+            // Sinkronkan status invoice bila ada dan status final
+            try {
+                $status = $tripayResponse['data']['status'] ?? null;
+                $finalStatuses = ['PAID', 'EXPIRED', 'FAILED', 'REFUND'];
+                if ($status && in_array($status, $finalStatuses)) {
+                    // Temukan invoice berdasarkan reference
+                    $invoice = Invoice::where('tripay_reference', $reference)->first();
+                    if ($invoice) {
+                        $statusMapping = config('tripay.status_mapping');
+                        $newStatus = $statusMapping[$status] ?? 'pending';
+
+                        $updateData = [
+                            'status' => $newStatus,
+                            'tripay_data' => $tripayResponse['data'],
+                        ];
+
+                        if ($status === 'PAID') {
+                            $updateData['paid_date'] = now();
+                        }
+
+                        $invoice->update($updateData);
+
+                        // Aktifkan order & project bila pembayaran sukses
+                        if ($status === 'PAID') {
+                            try {
+                                // Aktifkan order jika masih pending
+                                $order = \App\Models\Order::find($invoice->order_id);
+                                if ($order && $order->status === 'pending') {
+                                    $order->status = 'active';
+                                    $order->activated_at = now();
+                                    if (!$order->next_due_date) {
+                                        $order->next_due_date = $order->calculateNextDueDate();
+                                    }
+                                    $order->save();
+                                }
+
+                                $project = \App\Models\Project::where('order_id', $invoice->order_id)->first();
+                                if ($project && $project->status === 'pending') {
+                                    $project->update([
+                                        'status' => 'active',
+                                        'start_date' => now(),
+                                    ]);
+                                } elseif (!$project && isset($order)) {
+                                    // Buat project otomatis bila belum ada
+                                    $baseName = '';
+                                    if ($order->domain_name) {
+                                        $baseName = 'Website for ' . $order->domain_name;
+                                    } elseif ($order->template) {
+                                        $baseName = $order->template->name . ' Project';
+                                    } elseif ($order->product) {
+                                        $baseName = $order->product->name . ' Project';
+                                    } else {
+                                        $baseName = 'Project';
+                                    }
+                                    if ($order->user) {
+                                        $baseName .= ' for ' . $order->user->name;
+                                    }
+
+                                    $websiteUrl = $order->domain_name ? ('https://' . $order->domain_name) : null;
+
+                                    \App\Models\Project::create([
+                                        'project_name' => $baseName,
+                                        'user_id' => $order->user_id,
+                                        'order_id' => $order->id,
+                                        'template_id' => $order->template_id,
+                                        'status' => 'active',
+                                        'website_url' => $websiteUrl,
+                                        'start_date' => now(),
+                                    ]);
+                                }
+                                // Kirim notifikasi sukses pembayaran
+                                if ($invoice->user) {
+                                    $invoice->user->notify(new \App\Notifications\PaymentSuccessful($invoice));
+                                }
+                            } catch (\Throwable $e) {
+                                \Log::warning('Failed to activate project or send notification (polling)', [
+                                    'invoice_id' => $invoice->id,
+                                    'message' => $e->getMessage(),
+                                ]);
+                            }
+                        }
+
+                        \Log::info('Invoice status synchronized via polling', [
+                            'invoice_id' => $invoice->id,
+                            'reference' => $reference,
+                            'tripay_status' => $status,
+                            'new_status' => $newStatus,
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('checkTripayStatus sync failed', [
+                    'reference' => $reference,
+                    'message' => $e->getMessage(),
+                ]);
             }
 
             return response()->json([

@@ -155,11 +155,9 @@
                                 @endphp
                                 @if($totalFee > 0)
                                     <p class="text-xs text-gray-500">
-                                        Biaya Admin (Total): Rp {{ number_format($totalFee, 0, ',', '.') }}
+                                        Biaya Admin : {{ number_format($customerSplit, 0, ',', '.') }}
                                     </p>
-                                    <p class="text-[11px] text-gray-500">
-                                        Skema 50:50 → Pelanggan: Rp {{ number_format($customerSplit, 0, ',', '.') }}, Merchant: Rp {{ number_format($merchantSplit, 0, ',', '.') }}
-                                    </p>
+                                   
                                 @endif
                             </div>
                         </div>

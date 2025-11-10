@@ -33,28 +33,39 @@ class GenerateRecurringInvoices extends Command
         $this->info('Starting to generate recurring invoices...');
         
         // Find orders that need renewal invoices
-        // Check orders where next_due_date is within the next 7 days and no pending invoice exists
-        $upcomingRenewals = Order::where('status', 'active')
-            ->where('next_due_date', '<=', now()->addDays(7))
-            ->whereDoesntHave('invoices', function($query) {
-                $query->whereIn('status', ['pending', 'paid'])
-                    ->where('created_at', '>=', now()->subDays(30)); // No recent invoice
-            })
+        // Check orders where next_due_date is within the next 14 days
+        // Note: idempotensi dicek per-order saat loop; hindari filter created_at yang bisa salah-positif
+        $upcomingRenewalsQuery = Order::where('status', 'active')
+            ->where('order_type', 'subscription')
+            ->whereNotNull('next_due_date')
+            ->where('next_due_date', '<=', now()->addDays(14))
             ->with(['user', 'product', 'project'])
-            ->get();
-            
+            ->orderBy('id');
+
         $generatedCount = 0;
-        
-        foreach ($upcomingRenewals as $order) {
-            try {
-                // Skip if project is not active
-                if ($order->project && $order->project->status !== 'active') {
-                    $this->info("Skipping order ID: {$order->id} - Project not active (status: {$order->project->status})");
-                    continue;
-                }
+
+        $upcomingRenewalsQuery->chunkById(100, function ($orders) use (&$generatedCount) {
+            foreach ($orders as $order) {
+                try {
+                    // Skip if project is not active
+                    if ($order->project && $order->project->status !== 'active') {
+                        $this->info("Skipping order ID: {$order->id} - Project not active (status: {$order->project->status})");
+                        continue;
+                    }
                 
                 // Calculate next billing period
                 $nextDueDate = $this->calculateNextDueDate($order->billing_cycle, $order->next_due_date);
+
+                // Idempoten: hindari duplikasi invoice pada periode yang sama
+                $periodStart = Carbon::parse($order->next_due_date)->toDateString();
+                $existingSamePeriod = Invoice::where('order_id', $order->id)
+                    ->whereDate('billing_period_start', $periodStart)
+                    ->whereIn('status', ['sent', 'paid', 'overdue', 'cancelled'])
+                    ->exists();
+                if ($existingSamePeriod) {
+                    $this->info("Skipping order ID: {$order->id} - invoice for period {$periodStart} already exists");
+                    continue;
+                }
                 
                 // Calculate tax (PPN 11%)
                 $taxAmount = round($order->amount * 0.11, 2);
@@ -68,17 +79,23 @@ class GenerateRecurringInvoices extends Command
                     'amount' => $order->amount,
                     'tax_amount' => $taxAmount,
                     'total_amount' => $totalAmount,
-                    'status' => 'pending',
-                    'due_date' => $order->next_due_date->addDays(7), // 7 days to pay
+                    'status' => 'sent',
+                    // Jatuh tempo sama dengan awal periode berikut (next_due_date saat ini)
+                    'due_date' => Carbon::parse($order->next_due_date),
                     'is_renewal' => true,
-                    'billing_period_start' => $order->next_due_date,
+                    'billing_period_start' => Carbon::parse($order->next_due_date),
                     'billing_period_end' => $nextDueDate,
                 ]);
                 
-                // Update order's next due date
-                $order->update([
-                    'next_due_date' => $nextDueDate
-                ]);
+                // Kirim notifikasi invoice baru (Invoice Generated)
+                try {
+                    \Notification::send($order->user, new \App\Notifications\InvoiceGeneratedNotification($invoice));
+                } catch (\Throwable $notifyErr) {
+                    Log::warning('Failed to send InvoiceGeneratedNotification', [
+                        'invoice_id' => $invoice->id,
+                        'error' => $notifyErr->getMessage(),
+                    ]);
+                }
                 
                 $generatedCount++;
                 
@@ -105,7 +122,8 @@ class GenerateRecurringInvoices extends Command
                     'error' => $e->getMessage()
                 ]);
             }
-        }
+            }
+        });
         
         $this->info("Completed! Generated {$generatedCount} recurring invoices.");
         

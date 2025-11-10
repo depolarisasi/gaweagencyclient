@@ -17,11 +17,20 @@ class OrderAddon extends Model
         'billing_cycle',
         'quantity',
         'addon_details',
+        'status',
+        'started_at',
+        'next_due_date',
+        'cancel_at_period_end',
+        'cancelled_at',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'addon_details' => 'array',
+        'started_at' => 'datetime',
+        'next_due_date' => 'date',
+        'cancel_at_period_end' => 'boolean',
+        'cancelled_at' => 'datetime',
     ];
 
     /**

@@ -138,10 +138,13 @@ return [
     */
     
     'status_mapping' => [
-        'UNPAID' => 'pending',
+        // Konsisten: invoice belum dibayar berstatus 'sent'
+        'UNPAID' => 'sent',
         'PAID' => 'paid',
-        'EXPIRED' => 'expired',
-        'FAILED' => 'failed',
-        'REFUND' => 'refunded',
+        // Tripay EXPIRED -> invoice kami 'overdue'
+        'EXPIRED' => 'overdue',
+        // Gagal/refund: treat sebagai cancelled dalam sistem
+        'FAILED' => 'cancelled',
+        'REFUND' => 'cancelled',
     ],
 ];

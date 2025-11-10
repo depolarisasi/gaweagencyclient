@@ -32,8 +32,8 @@ Route::get('/', function () {
 })->name('home');
 Route::get('/templates/{template}', [\App\Http\Controllers\TemplateController::class, 'show'])->name('templates.show');
 
-// Payment routes (public for callback)
-Route::post('/payment/callback', [PaymentController::class, 'handleCallback'])->name('payment.callback');
+// Payment routes (public for callback) - ensure single valid handler
+// Duplicate removed; using handleTripayCallback defined above
 
 // Debug email preview (local only)
 if (app()->environment('local')) {
@@ -246,6 +246,8 @@ Route::middleware(['auth', 'role:client'])->prefix('client')->group(function () 
     Route::get('/', [ClientDashboardController::class, 'index'])->name('client.dashboard');
     Route::get('/products', [ClientDashboardController::class, 'products'])->name('client.products');
     Route::get('/orders', [ClientDashboardController::class, 'orders'])->name('client.orders');
+    Route::get('/orders/{order}', [ClientDashboardController::class, 'showOrder'])->name('client.orders.show');
+    Route::post('/orders/{order}/addons/{orderAddon}/cancel', [ClientDashboardController::class, 'cancelAddon'])->name('client.orders.addons.cancel');
     Route::get('/projects', [ClientDashboardController::class, 'projects'])->name('client.projects.index');
     Route::get('/projects/{project}', [ClientDashboardController::class, 'showProject'])->name('client.projects.show');
     Route::get('/invoices', [ClientDashboardController::class, 'invoices'])->name('client.invoices.index');
@@ -257,6 +259,17 @@ Route::middleware(['auth', 'role:client'])->prefix('client')->group(function () 
     Route::get('/invoices/{invoice}/payment/instructions', [PaymentController::class, 'showPaymentInstructions'])->name('client.invoices.payment.instructions');
     Route::get('/invoices/{invoice}/payment/status', [PaymentController::class, 'checkPaymentStatus'])->name('client.invoices.payment.status');
     Route::get('/invoices/{invoice}', [ClientDashboardController::class, 'showInvoice'])->name('client.invoices.show');
+    Route::get('/invoices/{invoice}/download', function (Invoice $invoice) {
+        abort_unless($invoice->user_id === auth()->id(), 403);
+        $pdfService = app(\App\Services\InvoicePdfService::class);
+        $output = $pdfService->generate($invoice);
+        if (!$output) {
+            return back()->with('error', 'Gagal membuat PDF invoice.');
+        }
+        return response($output, 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . ($invoice->invoice_number ?? ('invoice-'.$invoice->id)) . '.pdf"');
+    })->name('client.invoices.download');
     
     // Client Support Ticket Routes
     Route::resource('tickets', ClientSupportTicketController::class)->names([
@@ -326,6 +339,8 @@ Route::prefix('checkout')->name('checkout.')->group(function () {
     
     // Step 7: Billing - Informasi pembayaran (VA/QR/panduan)
     Route::get('/billing', [App\Http\Controllers\CheckoutController::class, 'billing'])->name('billing');
+    // Reset checkout bila user kembali dari billing
+    Route::post('/reset', [App\Http\Controllers\CheckoutController::class, 'reset'])->name('reset');
     
     // Test route for creating Tripay data
     Route::get('/test/create-tripay-data', [App\Http\Controllers\CheckoutController::class, 'createTestTripayData'])->name('test.tripay');

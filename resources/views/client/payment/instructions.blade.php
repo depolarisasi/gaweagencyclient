@@ -39,7 +39,7 @@
                         <div class="text-center">
                             <div class="text-sm text-gray-600 mb-2">Virtual Account Number:</div>
                             <div class="text-3xl font-bold text-primary font-mono tracking-wider">{{ $tripayData['pay_code'] }}</div>
-                            <button onclick="copyToClipboard('{{ $tripayData['pay_code'] }}')" class="btn btn-outline btn-sm mt-3">
+                            <button onclick="copyToClipboard('{{ $tripayData['pay_code'] }}', this)" class="btn btn-outline btn-sm mt-3">
                                 <i class="fas fa-copy mr-1"></i> Copy Number
                             </button>
                         </div>
@@ -105,7 +105,7 @@
                         <p class="text-sm text-gray-600 mt-2">We'll automatically update when payment is received</p>
                     </div>
                     <div class="text-center mt-4">
-                        <button onclick="checkPaymentStatus()" class="btn btn-outline btn-sm">
+                        <button onclick="checkPaymentStatus(this)" class="btn btn-outline btn-sm">
                             <i class="fas fa-refresh mr-1"></i> Check Status
                         </button>
                     </div>
@@ -197,7 +197,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Countdown Timer
 function startCountdown() {
-    const expiredTime = new Date('{{ $tripayData['expired_time'] }}').getTime();
+    // Tripay memberikan expired_time dalam detik UNIX, konversi ke ms
+    const expiredTime = ({{ $tripayData['expired_time'] }} * 1000);
     
     function updateCountdown() {
         const now = new Date().getTime();
@@ -224,30 +225,45 @@ function startCountdown() {
 }
 
 // Copy to clipboard function
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        // Show success feedback
-        const btn = event.target;
-        const originalText = btn.innerHTML;
+function copyToClipboard(text, btn) {
+    const originalText = btn ? btn.innerHTML : null;
+    const applyOk = () => {
+        if (!btn) return;
         btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
         btn.classList.add('btn-success');
-        
         setTimeout(() => {
             btn.innerHTML = originalText;
             btn.classList.remove('btn-success');
         }, 2000);
-    });
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(applyOk).catch(applyOk);
+    } else {
+        // Fallback execCommand
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        applyOk();
+    }
 }
 
 // Check payment status
-function checkPaymentStatus() {
+function checkPaymentStatus(btn) {
+    const originalHtml = btn ? btn.innerHTML : null;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading loading-spinner loading-xs mr-1"></span> Checking...';
+    }
     fetch('{{ route("client.invoices.payment.status", $invoice) }}')
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                const status = data.data.status;
+            if (data && data.success) {
+                const status = (data.data && data.data.status) ? data.data.status : 'UNKNOWN';
                 const statusElement = document.getElementById('paymentStatus');
-                
+                if (!statusElement) return;
                 if (status === 'PAID') {
                     statusElement.innerHTML = `
                         <div class="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full">
@@ -256,9 +272,7 @@ function checkPaymentStatus() {
                         </div>
                         <p class="text-sm text-gray-600 mt-2">Redirecting to dashboard...</p>
                     `;
-                    setTimeout(() => {
-                        window.location.href = '{{ route("client.dashboard") }}';
-                    }, 2000);
+                    setTimeout(() => { window.location.href = '{{ route("client.dashboard") }}'; }, 1500);
                 } else if (status === 'EXPIRED') {
                     statusElement.innerHTML = `
                         <div class="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-full">
@@ -267,11 +281,31 @@ function checkPaymentStatus() {
                         </div>
                         <p class="text-sm text-gray-600 mt-2">Please create a new payment</p>
                     `;
+                } else if (status === 'FAILED' || status === 'REFUND') {
+                    statusElement.innerHTML = `
+                        <div class="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-full">
+                            <i class="fas fa-times-circle mr-2"></i>
+                            Payment ${status}
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">Please try another method</p>
+                    `;
+                } else {
+                    statusElement.innerHTML = `
+                        <div class="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full">
+                            <i class="fas fa-clock mr-2"></i>
+                            Waiting for Payment (${status})
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">We'll automatically update when payment is received</p>
+                    `;
                 }
             }
         })
-        .catch(error => {
-            console.error('Error checking payment status:', error);
+        .catch(error => { console.error('Error checking payment status:', error); })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         });
 }
 

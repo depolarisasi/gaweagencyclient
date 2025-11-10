@@ -198,7 +198,7 @@
                                 <p class="text-sm text-gray-600">Nomor Virtual Account</p>
                                 <div class="flex items-center space-x-2">
                                     <p class="font-semibold text-lg text-gray-900 font-mono bg-gray-100 px-3 py-2 rounded border">{{ $tripayTransaction['pay_code'] }}</p>
-                                    <button onclick="copyToClipboard('{{ $tripayTransaction['pay_code'] }}')" 
+                                    <button onclick="copyToClipboard('{{ $tripayTransaction['pay_code'] }}', this)" 
                                             class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -335,7 +335,7 @@
                                 
                                 @if(isset($tripayTransaction['qr_string']) && !empty($tripayTransaction['qr_string']))
                                     <div class="mt-4">
-                                        <button onclick="copyToClipboard('{{ $tripayTransaction['qr_string'] }}')" 
+                                        <button onclick="copyToClipboard('{{ $tripayTransaction['qr_string'] }}', this)" 
                                                 class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -371,11 +371,11 @@
                         
                         @if(isset($domainInfo) && $domainInfo)
                             <div class="flex justify-between items-center py-2">
-                                <span class="text-gray-600">Domain: {{ $domainInfo['domain_name'] ?? $domainInfo['name'] ?? 'N/A' }}</span>
+                                <span class="text-gray-600">Domain: {{ $domainInfo['domain_name'] ?? $domainInfo['name'] ?? $domainInfo['domain'] ?? 'N/A' }}</span>
                                 @php
                                     $type = $domainInfo['domain_type'] ?? $domainInfo['type'] ?? 'unknown';
                                 @endphp
-                                @if($type === 'new')
+                                @if($type === 'new' || $type === 'transfer' || $type === 'register_new')
                                     @php
                                         $tldShown = $domainInfo['tld'] ?? null;
                                         if(!$tldShown) {
@@ -431,13 +431,22 @@
                         
                         
                         
-                        <!-- Customer Fee Information (only show customer fees, not merchant fees) -->
-                        @if(isset($tripayTransaction['fee_customer']) && $tripayTransaction['fee_customer'] > 0)
+                        <!-- Fee Information with 50:50 display (informational) -->
+                        @php
+                            $customerFee = $tripayTransaction['fee_customer'] ?? 0;
+                            $merchantFee = $tripayTransaction['fee_merchant'] ?? 0;
+                            $totalFee = $customerFee + $merchantFee;
+                            $customerSplit = round($totalFee / 2);
+                            $merchantSplit = $totalFee - $customerSplit;
+                        @endphp
+                        @if($totalFee > 0)
                             <div class="flex justify-between items-center py-1 text-sm text-gray-600">
-                                <span>Biaya Admin</span>
-                                <span>Rp {{ number_format($tripayTransaction['fee_customer'], 0, ',', '.') }}</span>
+                                <span>Biaya Admin (Total)</span>
+                                <span>Rp {{ number_format($customerSplit, 0, ',', '.') }}</span>
                             </div>
+                           
                         @endif
+                       
                         
                         <hr class="my-2">
                         <div class="flex justify-between items-center font-bold text-lg">
@@ -481,7 +490,7 @@
                     </a>
                     
                     <div class="space-x-4">
-                        <button onclick="checkPaymentStatus()" 
+                        <button onclick="checkPaymentStatus(this)" 
                                 class="inline-flex items-center px-6 py-3 border border-blue-300 text-base font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -512,10 +521,11 @@
 
 @section('scripts')
 <script>
-function copyToClipboard(text) {
+function copyToClipboard(text, buttonEl) {
     navigator.clipboard.writeText(text).then(function() {
         // Show success message
-        const button = event.target.closest('button');
+        const button = buttonEl || document.activeElement;
+        if (!button) return;
         const originalText = button.innerHTML;
         button.innerHTML = `
             <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -533,10 +543,10 @@ function copyToClipboard(text) {
     });
 }
 
-function checkPaymentStatus() {
+function checkPaymentStatus(buttonEl) {
     @if(isset($tripayTransaction['reference']))
         // Show loading state
-        const button = event.target;
+        const button = buttonEl || document.activeElement;
         const originalText = button.innerHTML;
         button.disabled = true;
         button.innerHTML = `
@@ -640,6 +650,44 @@ function togglePaymentInstructions(type = '') {
         }
     }
 }
+
+// Prevent back navigation from billing and reset checkout state
+(function() {
+    function resetCheckoutAndRedirect() {
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        fetch('{{ route('checkout.reset') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token || ''
+            }
+        })
+        .finally(function() {
+            window.location.replace('{{ route('checkout.index') }}');
+        });
+    }
+
+    // Push a new history state to intercept back
+    try {
+        history.pushState(null, document.title, location.href);
+    } catch (e) {}
+
+    window.addEventListener('popstate', function(e) {
+        e.preventDefault();
+        resetCheckoutAndRedirect();
+    });
+
+    // Intercept clicks to summary/back links on this page
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (!link) return;
+        const summaryUrl = '{{ route('checkout.summary') }}';
+        const href = link.getAttribute('href');
+        if (href === summaryUrl) {
+            e.preventDefault();
+            resetCheckoutAndRedirect();
+        }
+    });
+})();
 </script>
 @endsection
  
