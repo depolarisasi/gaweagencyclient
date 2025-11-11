@@ -140,7 +140,7 @@ class GenerateRecurringInvoices extends Command
         return match($billingCycle) {
             'monthly' => $date->addMonth(),
             'quarterly' => $date->addMonths(3),
-            'semi_annually' => $date->addMonths(6),
+            '6_months', 'semi_annually' => $date->addMonths(6),
             'annually' => $date->addYear(),
             default => $date->addMonth(),
         };

@@ -1,5 +1,10 @@
 # Active Context
 
+Update (2025-11-11 — Kebijakan Penagihan & Pengingat)
+- Command `CancelExpiredInvoices` dan `CancelUnpaidInvoices` dihapus untuk konsistensi kebijakan (penandaan `overdue` via `invoices:mark-overdue`, suspend H+14 via `projects:suspend-overdue`). Tidak ada jadwal untuk cancel otomatis berdasarkan `pending`.
+- Idempoten reminders: kolom JSON `invoices.reminders` menyimpan penanda per-offset (H-7/H-1/H+3/H+7/H+14) agar pengiriman tidak duplikat saat rerun; logging per-batch ditambahkan pada `invoices:send-reminders`.
+- Harmonisasi siklus penagihan: `GenerateRecurringInvoices` mendukung enum `6_months` selain `semi_annually` agar seragam lintas model dan UI; tidak mengubah `order.next_due_date` ketika invoice dibuat.
+
 Update (Plan B/C/D — 2025-11-10)
 - Admin Invoice: `InvoiceController@send` kini mengubah status ke `sent` dan mengirim email ke klien memakai `InvoiceSentMail`. Respons JSON disesuaikan untuk konsumsi JS di view admin.
 - Admin PDF: `InvoiceController@download` mendukung inline PDF untuk workflow print di browser. View admin menambahkan tombol Preview/Print yang membuka PDF di tab baru.

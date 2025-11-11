@@ -1,0 +1,25 @@
+- [x] Task List 1
+ --> [x] GenerateRecurringInvoices: window seleksi `next_due_date <= now()->addDays(14)`
+ --> [x] GenerateRecurringInvoices: tetapkan `status='sent'` (konsisten dengan PaymentController/UI)
+ --> [x] GenerateRecurringInvoices: tetapkan `due_date = order->next_due_date`
+ --> [x] GenerateRecurringInvoices: jangan update `order.next_due_date` saat generate
+ --> [x] GenerateRecurringInvoices: simpan `is_renewal=true`, `billing_period_start = order->next_due_date`, `billing_period_end = calculateNextDueDate(...)`
+ --> [x] Harmonisasi siklus penagihan: ganti `semi_annually` ke enum baru (`6_months`) di `calculateNextDueDate`
+ --> [x] Model Invoice: tambah di `fillable` & `casts` kolom `is_renewal`, `billing_period_start`, `billing_period_end`, `payment_url`, `payment_code`, `payment_instructions`, `payment_expired_at`
+ --> [x] Audit scopes pemakaian "unpaid": pastikan query menggunakan `sent` (bukan `pending`), dan tidak memakai `scopeUnpaid` yang mencakup `draft/overdue`
+
+ - [x] Task List 2
+ --> [x] SuspendOverdueProjects: filter `status='overdue'` dengan `due_date < now()->subDays(14)` dan `is_renewal=true`
+ --> [x] SuspendOverdueProjects: saat suspend set `project.status='suspended'` dan `order.status='suspended'`; cancel invoice
+ --> [x] CancelExpiredInvoices: ganti kebijakan ke penandaan overdue (`invoices:mark-overdue`), tidak auto-cancel saat lewat due_date
+ --> [x] Depresiasi/ubah `CancelExpiredInvoices`: ubah signature/implementasi agar tidak cancel; atau hapus file untuk mencegah konflik
+ --> [x] Hapus/nonaktifkan `CancelUnpaidInvoices`: hindari duplikasi kebijakan; auto-cancel terpusat di `projects:suspend-overdue` pada H+14 
+
+ - [x] Task List 3
+ --> [x] Email reminders: command harian `invoices:send-reminders` (Invoice Generated, H-7/H-1 untuk `sent`; H+3/H+7/H+14 untuk `overdue`)
+ --> [x] Notifikasi tersedia: `InvoiceGeneratedNotification`, `InvoiceReminderBeforeDueNotification`, `InvoiceReminderAfterDueNotification`
+ --> [x] Kernel: jadwalkan `invoices:send-reminders` daily pukul 08:00 (tanpa overlap)
+ --> [x] Idempoten reminders: tambahkan penanda `reminded_at` per-offset (H-7/H-1/H+3/H+7/H+14) per-invoice agar tidak duplikat bila rerun
+ --> [x] Logging & metrik: catat jumlah terkirim per batch dan tahan error per-notifikasi (retry aman)
+ --> [x] PaymentController: pastikan seluruh alur membaca `status='sent'` untuk invoice yang belum dibayar
+ --> [x] Audit UI & query sisa: bersihkan referensi `pending` di view/controller/scope; selaraskan label ke `sent/overdue`

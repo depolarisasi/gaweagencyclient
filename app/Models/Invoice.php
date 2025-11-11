@@ -35,6 +35,8 @@ class Invoice extends Model
         // Renewal type & items snapshot
         'renewal_type',
         'items_snapshot',
+        // Reminder tracking
+        'reminders',
         // Payment details
         'payment_url',
         'payment_code',
@@ -61,6 +63,7 @@ class Invoice extends Model
             'payment_instructions' => 'array',
             'payment_expired_at' => 'datetime',
             'items_snapshot' => 'array',
+            'reminders' => 'array',
         ];
     }
 

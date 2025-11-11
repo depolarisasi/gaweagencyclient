@@ -43,7 +43,7 @@
                             </div>
                             <div class="text-right">
                                 @if($invoice->status === 'sent')
-                                    <div class="badge badge-warning badge-lg">Pending Payment</div>
+                                    <div class="badge badge-warning badge-lg">Menunggu Pembayaran</div>
                                 @elseif($invoice->status === 'paid')
                                     <div class="badge badge-success badge-lg">Paid</div>
                                 @elseif($invoice->status === 'overdue')

@@ -37,7 +37,7 @@
                 <div class="card-body">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-600">Pending Payment</p>
+                            <p class="text-sm text-gray-600">Menunggu Pembayaran</p>
                             <p class="text-2xl font-bold text-orange-600">{{ $pendingCount }}</p>
                         </div>
                         <div class="p-3 bg-orange-100 rounded-full">
@@ -130,7 +130,7 @@
                                         </td>
                                         <td>
                                             @if($invoice->status === 'sent')
-                                                <div class="badge badge-warning">Pending</div>
+                                                <div class="badge badge-warning">Menunggu Pembayaran</div>
                                             @elseif($invoice->status === 'paid')
                                                 <div class="badge badge-success">Paid</div>
                                             @elseif($invoice->status === 'cancelled')

@@ -1,5 +1,10 @@
 # Progress
 
+## 2025-11-11 — Kebijakan Invoice & Reminders
+- Menghapus command `CancelExpiredInvoices` dan `CancelUnpaidInvoices` dari codebase (tidak dijadwalkan) untuk mencegah konflik kebijakan dengan penandaan `overdue` dan suspend H+14.
+- Reminders idempoten: menambahkan kolom JSON `invoices.reminders` untuk penanda per-offset (H-7/H-1/H+3/H+7/H+14); sistem skip pengiriman jika sudah bertanda, dan logging jumlah terkirim per-batch diperkuat.
+- Harmonisasi siklus penagihan: generator recurring mendukung enum `6_months` berdampingan dengan `semi_annually` (kompatibilitas lintas model/enum), tanpa mengubah `order.next_due_date` saat generate.
+
 Selesai (Plan B/C/D — 2025-11-10)
 - Admin InvoiceController: kirim email (`send()` → status `sent` + `InvoiceSentMail`) dan dukungan inline print melalui `download()`; respons JSON untuk JS view.
 - Email Template: `emails/invoice-sent.blade.php` ditambahkan menampilkan nomor, total, dan jatuh tempo.
