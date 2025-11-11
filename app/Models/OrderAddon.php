@@ -79,15 +79,9 @@ class OrderAddon extends Model
     public function getBillingCycleLabelAttribute(): string
     {
         if (!$this->billing_cycle) {
-            return 'One-time';
+            return 'Sekali';
         }
-
-        return match($this->billing_cycle) {
-            'monthly' => 'Per Bulan',
-            'quarterly' => 'Per 3 Bulan',
-            'semi_annually' => 'Per 6 Bulan',
-            'annually' => 'Per Tahun',
-            default => ucfirst($this->billing_cycle),
-        };
+        // Kebijakan baru: semua add-on ditagihkan bulanan
+        return 'Per Bulan';
     }
 }

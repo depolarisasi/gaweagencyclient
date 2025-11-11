@@ -31,8 +31,9 @@
             $addons = $order ? $order->orderAddons : collect();
             $addonsAmount = $order->addons_amount ?? ($addons->sum('price'));
             $subtotal = $invoice->amount ?? ($subscriptionAmount + $domainAmount + $addonsAmount);
-            $feeCustomer = $invoice->fee_customer ?? ($invoice->tripay_data['fee_customer'] ?? 0);
-            $totalBayar = $subtotal + $feeCustomer;
+            $taxAmount = $invoice->tax_amount ?? 0;
+            $feeCustomer = $invoice->fee_customer ?? 0;
+            $totalBayar = $invoice->total_amount ?? ($subtotal + $taxAmount + $feeCustomer);
         @endphp
 
         <div class="space-y-1 text-gray-800">
@@ -51,8 +52,11 @@
 
         <div class="mt-4">
             <p>Subtotal: <span class="font-bold">Rp {{ number_format($subtotal, 0, ',', '.') }}</span></p>
-            <p>Biaya Admin (Tripay): <span class="font-bold">Rp {{ number_format($feeCustomer, 0, ',', '.') }}</span></p>
-            <p>Total Bayar: <span class="font-extrabold">Rp {{ number_format($totalBayar, 0, ',', '.') }}</span></p>
+            <p>Pajak (PPN 11%): <span class="font-bold">Rp {{ number_format($taxAmount, 0, ',', '.') }}</span></p>
+            @if($feeCustomer > 0)
+                <p>Biaya Admin (Customer): <span class="font-bold">Rp {{ number_format($feeCustomer, 0, ',', '.') }}</span></p>
+            @endif
+            <p>Total: <span class="font-extrabold">Rp {{ number_format($totalBayar, 0, ',', '.') }}</span></p>
         </div>
 
         @if ($invoice->status == 'unpaid' && $paymentUrl)

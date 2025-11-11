@@ -6,7 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
 use App\Models\TicketReply;
 use App\Models\User;
+use App\Notifications\SupportTicketCreatedNotification;
+use App\Notifications\SupportTicketRepliedNotification;
+use App\Notifications\SupportTicketStatusUpdatedNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class SupportTicketController extends Controller
@@ -109,7 +113,18 @@ class SupportTicketController extends Controller
             'status' => 'open',
         ]);
         
-        // TODO: Send notification to assigned staff and client
+        // Notify client about ticket creation
+        try {
+            $ticket->loadMissing('user');
+            if ($ticket->user) {
+                $ticket->user->notify(new SupportTicketCreatedNotification($ticket));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send SupportTicketCreatedNotification (admin create)', [
+                'ticket_id' => $ticket->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         if ($request->expectsJson()) {
             return response()->json([
@@ -224,7 +239,18 @@ class SupportTicketController extends Controller
             'status' => 'in_progress' // Auto-mark as in progress when assigned
         ]);
         
-        // TODO: Send notification to assigned staff
+        // Notify client about status update to in_progress
+        try {
+            $ticket->loadMissing('user');
+            if ($ticket->user) {
+                $ticket->user->notify(new SupportTicketStatusUpdatedNotification($ticket, 'open', 'in_progress'));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send SupportTicketStatusUpdatedNotification (assign)', [
+                'ticket_id' => $ticket->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         return response()->json([
             'success' => true,
@@ -244,7 +270,21 @@ class SupportTicketController extends Controller
             ], 400);
         }
         
+        $old = $ticket->status;
         $ticket->update(['status' => 'in_progress']);
+
+        // Notify client about status update
+        try {
+            $ticket->loadMissing('user');
+            if ($ticket->user) {
+                $ticket->user->notify(new SupportTicketStatusUpdatedNotification($ticket, $old, 'in_progress'));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send SupportTicketStatusUpdatedNotification (markInProgress)', [
+                'ticket_id' => $ticket->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         return response()->json([
             'success' => true,
@@ -264,9 +304,21 @@ class SupportTicketController extends Controller
             ], 400);
         }
         
+        $old = $ticket->status;
         $ticket->markAsResolved(auth()->id());
         
-        // TODO: Send notification to client
+        // Notify client about status update
+        try {
+            $ticket->loadMissing('user');
+            if ($ticket->user) {
+                $ticket->user->notify(new SupportTicketStatusUpdatedNotification($ticket, $old, 'resolved'));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send SupportTicketStatusUpdatedNotification (resolve)', [
+                'ticket_id' => $ticket->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         return response()->json([
             'success' => true,
@@ -279,9 +331,21 @@ class SupportTicketController extends Controller
      */
     public function close(SupportTicket $ticket)
     {
+        $old = $ticket->status;
         $ticket->markAsClosed(auth()->id());
         
-        // TODO: Send notification to client
+        // Notify client about status update
+        try {
+            $ticket->loadMissing('user');
+            if ($ticket->user) {
+                $ticket->user->notify(new SupportTicketStatusUpdatedNotification($ticket, $old, 'closed'));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send SupportTicketStatusUpdatedNotification (close)', [
+                'ticket_id' => $ticket->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         return response()->json([
             'success' => true,
@@ -301,10 +365,24 @@ class SupportTicketController extends Controller
             ], 400);
         }
 
+        $old = $ticket->status;
         $ticket->update([
             'status' => 'open',
             'closed_at' => null
         ]);
+
+        // Notify client about status update
+        try {
+            $ticket->loadMissing('user');
+            if ($ticket->user) {
+                $ticket->user->notify(new SupportTicketStatusUpdatedNotification($ticket, $old, 'open'));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send SupportTicketStatusUpdatedNotification (reopen)', [
+                'ticket_id' => $ticket->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'success' => true,
@@ -319,7 +397,9 @@ class SupportTicketController extends Controller
     {
         $request->validate([
             'message' => 'required|string|max:5000',
-            'is_internal' => 'boolean'
+            'is_internal' => 'boolean',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|mimes:pdf,png,jpg,jpeg,gif|max:10240'
         ]);
         
         $isInternal = $request->boolean('is_internal');
@@ -327,18 +407,81 @@ class SupportTicketController extends Controller
         // Sanitize message (align with client sanitization)
         $sanitizedMessage = $this->sanitizeHtml($request->message);
 
+        // Handle attachments upload (align with client upload path and disk)
+        $uploaded = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if (!$file->isValid()) {
+                    Log::warning('Skipping invalid attachment on admin reply', [
+                        'ticket_id' => $ticket->id ?? null,
+                        'name' => $file->getClientOriginalName(),
+                    ]);
+                    continue;
+                }
+                try {
+                    $path = $file->store('ticket_attachments/' . $ticket->id, 'public');
+                    if (!$path) {
+                        Log::error('Failed to store attachment (empty path) on admin reply', [
+                            'ticket_id' => $ticket->id ?? null,
+                            'name' => $file->getClientOriginalName(),
+                        ]);
+                        continue;
+                    }
+                    $uploaded[] = [
+                        'path' => $path,
+                        'name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                        'mime' => $file->getClientMimeType(),
+                    ];
+                } catch (\Throwable $e) {
+                    Log::error('Exception while storing attachment on admin reply', [
+                        'ticket_id' => $ticket->id ?? null,
+                        'name' => $file->getClientOriginalName(),
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
         $reply = $ticket->addReply(
             $sanitizedMessage,
             auth()->id(),
-            $isInternal
+            $isInternal,
+            !empty($uploaded) ? $uploaded : null
         );
         
         // If not internal, update ticket status to in_progress if it was open
         if (!$isInternal && $ticket->status === 'open') {
+            $old = $ticket->status;
             $ticket->update(['status' => 'in_progress']);
+            // Notify client about status update
+            try {
+                $ticket->loadMissing('user');
+                if ($ticket->user) {
+                    $ticket->user->notify(new SupportTicketStatusUpdatedNotification($ticket, $old, 'in_progress'));
+                }
+            } catch (\Throwable $e) {
+                Log::error('Failed to send SupportTicketStatusUpdatedNotification (reply -> in_progress)', [
+                    'ticket_id' => $ticket->id ?? null,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
         
-        // TODO: Send notification to client (if not internal) or staff
+        // Notify client about reply if not internal
+        if (!$isInternal) {
+            try {
+                $ticket->loadMissing('user');
+                if ($ticket->user) {
+                    $ticket->user->notify(new SupportTicketRepliedNotification($ticket, $reply));
+                }
+            } catch (\Throwable $e) {
+                Log::error('Failed to send SupportTicketRepliedNotification (admin reply)', [
+                    'ticket_id' => $ticket->id ?? null,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
         
         if ($request->expectsJson()) {
             return response()->json([

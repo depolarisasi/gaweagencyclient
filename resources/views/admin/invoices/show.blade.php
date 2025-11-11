@@ -60,6 +60,12 @@
                                     <td>{{ $invoice->payment_method }}</td>
                                 </tr>
                                 @endif
+                                @if(!empty($invoice->tripay_reference))
+                                <tr>
+                                    <td><strong>Tripay Reference:</strong></td>
+                                    <td><span class="badge badge-info">{{ $invoice->tripay_reference }}</span></td>
+                                </tr>
+                                @endif
                             </table>
                         </div>
                         <div class="col-md-6">
@@ -88,6 +94,87 @@
                         </div>
                     </div>
                     
+                    <!-- Invoice Items -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Invoice Items</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Deskripsi</th>
+                                            <th>Periode / Siklus</n></th>
+                                            <th class="text-right">Jumlah</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if($invoice->items && $invoice->items->count() > 0)
+                                            @foreach($invoice->items as $item)
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ $item->description ?? 'Item' }}</strong>
+                                                        @if(!empty($item->billing_type))
+                                                            <div class="text-muted small">{{ ucfirst($item->billing_type) }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @php
+                                                            $start = isset($item->billing_period_start) ? \Carbon\Carbon::parse($item->billing_period_start) : null;
+                                                            $end = isset($item->billing_period_end) ? \Carbon\Carbon::parse($item->billing_period_end) : null;
+                                                        @endphp
+                                                        @if($start && $end)
+                                                            {{ $start->format('d M Y') }} - {{ $end->format('d M Y') }}
+                                                        @else
+                                                            {{ ucfirst($item->billing_cycle ?? 'monthly') }}
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-right">
+                                                        Rp {{ number_format($item->amount ?? 0, 0, ',', '.') }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @elseif($invoice->order)
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ $invoice->order->product->name ?? 'Service' }}</strong>
+                                                    @if($invoice->order->order_details && isset($invoice->order->order_details['template']))
+                                                        <div class="text-muted small">Template: {{ $invoice->order->order_details['template']['name'] }}</div>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($invoice->billing_period_start && $invoice->billing_period_end)
+                                                        {{ $invoice->billing_period_start->format('d M Y') }} - {{ $invoice->billing_period_end->format('d M Y') }}
+                                                    @else
+                                                        {{ ucfirst($invoice->order->billing_cycle) }}
+                                                    @endif
+                                                </td>
+                                                <td class="text-right">Rp {{ number_format($invoice->order->subscription_amount ?? 0, 0, ',', '.') }}</td>
+                                            </tr>
+                                            @if($invoice->order->order_details && isset($invoice->order->order_details['addons']))
+                                                @foreach($invoice->order->order_details['addons'] as $addon)
+                                                    <tr>
+                                                        <td>
+                                                            <strong>{{ $addon['name'] }}</strong>
+                                                            <div class="text-muted small">{{ $addon['billing_type'] }}</div>
+                                                        </td>
+                                                        <td>-</td>
+                                                        <td class="text-right">Rp {{ number_format($addon['price'], 0, ',', '.') }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            @endif
+                                        @else
+                                            <tr>
+                                                <td>Service</td>
+                                                <td>-</td>
+                                                <td class="text-right">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</td>
+                                            </tr>
+                                        @endif
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row mt-4">
                         <div class="col-12">
                             <div class="btn-group" role="group">
@@ -114,6 +201,15 @@
                                     <i class="fas fa-times"></i> Cancel Invoice
                                 </button>
                                 @endif
+                                <a href="{{ route('admin.invoices.download', $invoice) }}" class="btn btn-outline-primary" target="_blank">
+                                    <i class="fas fa-file-download"></i> Download PDF
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary" onclick="previewPdf({{ $invoice->id }})">
+                                    <i class="fas fa-eye"></i> Preview PDF
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="previewPdf({{ $invoice->id }}, true)">
+                                    <i class="fas fa-print"></i> Print
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -325,6 +421,46 @@ function cancelInvoice(invoiceId) {
                 });
             });
         }
+    });
+}
+
+function previewPdf(invoiceId, shouldPrint = false) {
+    fetch(`/admin/invoices/${invoiceId}/download`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/pdf'
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Gagal mengambil PDF');
+        return response.blob();
+    })
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const w = window.open('', '_blank');
+        if (!w) {
+            Swal.fire({
+                title: 'Popup diblokir',
+                text: 'Izinkan popup untuk melihat/print PDF.',
+                icon: 'warning'
+            });
+            return;
+        }
+        w.document.write(`<!DOCTYPE html><html><head><title>Invoice PDF</title><meta charset="utf-8"/></head><body style="margin:0;overflow:hidden"><embed src="${url}" type="application/pdf" width="100%" height="100%" /></body></html>`);
+        w.document.close();
+        if (shouldPrint) {
+            setTimeout(() => {
+                w.focus();
+                w.print();
+            }, 800);
+        }
+    })
+    .catch(() => {
+        Swal.fire({
+            title: 'Gagal',
+            text: 'Tidak dapat menampilkan PDF.',
+            icon: 'error'
+        });
     });
 }
 </script>

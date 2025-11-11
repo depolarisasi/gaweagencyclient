@@ -120,7 +120,12 @@ class Order extends Model
     // Helper methods
     public function getTotalAmountAttribute()
     {
-        return $this->amount + $this->setup_fee;
+        // Total dihitung dari komponen biaya aktual: subscription + addons + setup fee
+        // Hindari menjumlahkan kembali $this->amount karena biasanya merepresentasikan subtotal
+        $subscription = $this->subscription_amount ?? 0;
+        $addons = $this->addons_amount ?? 0;
+        $setup = $this->setup_fee ?? 0;
+        return $subscription + $addons + $setup;
     }
 
     public function getFormattedAmountAttribute()

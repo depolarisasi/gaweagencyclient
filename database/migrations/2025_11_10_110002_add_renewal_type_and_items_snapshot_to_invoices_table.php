@@ -13,9 +13,18 @@ return new class extends Migration
     {
         Schema::table('invoices', function (Blueprint $table) {
             // Jenis renewal: subscription atau addons (null untuk invoice awal)
-            $table->string('renewal_type', 20)->nullable()->after('is_renewal');
+            if (Schema::hasColumn('invoices', 'is_renewal')) {
+                $table->string('renewal_type', 20)->nullable()->after('is_renewal');
+            } else {
+                $table->string('renewal_type', 20)->nullable();
+            }
+
             // Snapshot item untuk audit cepat (selain tabel invoice_items)
-            $table->json('items_snapshot')->nullable()->after('tripay_data');
+            if (Schema::hasColumn('invoices', 'tripay_data')) {
+                $table->json('items_snapshot')->nullable()->after('tripay_data');
+            } else {
+                $table->json('items_snapshot')->nullable();
+            }
         });
     }
 

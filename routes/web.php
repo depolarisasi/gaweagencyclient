@@ -37,6 +37,32 @@ Route::get('/templates/{template}', [\App\Http\Controllers\TemplateController::c
 
 // Debug email preview (local only)
 if (app()->environment('local')) {
+    // Debug invoice PDF preview (no auth)
+    Route::get('/debug/invoice/{invoice?}', function (?Invoice $invoice) {
+        if (!$invoice) {
+            $invoice = Invoice::with(['user', 'items', 'order', 'order.product', 'order.template', 'order.orderAddons.productAddon'])
+                ->orderByDesc('id')
+                ->first() ?? new Invoice([
+                    'invoice_number' => 'INV' . now()->format('Ymd') . '0001',
+                    'amount' => 150000,
+                    'tax_amount' => 0,
+                    'total_amount' => 150000,
+                    'status' => 'sent',
+                ]);
+            if (!$invoice->user) {
+                $invoice->setRelation('user', new User(['name' => 'Sample User', 'email' => 'sample@example.com']));
+            }
+        }
+        $pdfService = app(\App\Services\InvoicePdfService::class);
+        $output = $pdfService->generate($invoice);
+        if (!$output) {
+            return response('Gagal membuat PDF invoice.', 500);
+        }
+        return response($output, 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . ($invoice->invoice_number ?? ('invoice-' . ($invoice->id ?? 'preview'))) . '.pdf"');
+    })->name('debug.invoice.pdf');
+
     Route::prefix('debug/email')->group(function () {
         // Payment Successful preview by invoice id
         Route::get('/payment-success/{invoice?}', function (?Invoice $invoice) {
@@ -248,6 +274,7 @@ Route::middleware(['auth', 'role:client'])->prefix('client')->group(function () 
     Route::get('/orders', [ClientDashboardController::class, 'orders'])->name('client.orders');
     Route::get('/orders/{order}', [ClientDashboardController::class, 'showOrder'])->name('client.orders.show');
     Route::post('/orders/{order}/addons/{orderAddon}/cancel', [ClientDashboardController::class, 'cancelAddon'])->name('client.orders.addons.cancel');
+    Route::post('/orders/{order}/addons/{orderAddon}/uncancel', [ClientDashboardController::class, 'uncancelAddon'])->name('client.orders.addons.uncancel');
     Route::get('/projects', [ClientDashboardController::class, 'projects'])->name('client.projects.index');
     Route::get('/projects/{project}', [ClientDashboardController::class, 'showProject'])->name('client.projects.show');
     Route::get('/invoices', [ClientDashboardController::class, 'invoices'])->name('client.invoices.index');

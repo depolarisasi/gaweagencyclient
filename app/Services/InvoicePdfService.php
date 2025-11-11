@@ -15,7 +15,14 @@ class InvoicePdfService
     public function generate(Invoice $invoice): ?string
     {
         try {
-            $invoice->loadMissing(['user', 'order', 'order.product']);
+            $invoice->loadMissing([
+                'user',
+                'items',
+                'order',
+                'order.product',
+                'order.template',
+                'order.orderAddons.productAddon',
+            ]);
 
             $html = View::make('pdf.invoice', [
                 'invoice' => $invoice,
@@ -23,11 +30,24 @@ class InvoicePdfService
 
             if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
                 $pdf = Pdf::loadHTML($html)->setPaper('A4', 'portrait');
+                // Enable remote resources (images/fonts via http/https) when needed
+                if (method_exists($pdf, 'setOptions')) {
+                    $pdf->setOptions([
+                        'isRemoteEnabled' => true,
+                    ]);
+                }
                 return $pdf->output();
             }
 
             if (class_exists(\Dompdf\Dompdf::class)) {
-                $dompdf = new \Dompdf\Dompdf();
+                // Enable remote resources for Dompdf
+                if (class_exists(\Dompdf\Options::class)) {
+                    $options = new \Dompdf\Options();
+                    $options->set('isRemoteEnabled', true);
+                    $dompdf = new \Dompdf\Dompdf($options);
+                } else {
+                    $dompdf = new \Dompdf\Dompdf();
+                }
                 $dompdf->loadHtml($html);
                 $dompdf->setPaper('A4', 'portrait');
                 $dompdf->render();

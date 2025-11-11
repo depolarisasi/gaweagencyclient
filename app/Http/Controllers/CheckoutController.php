@@ -36,29 +36,9 @@ class CheckoutController extends Controller
      */
     private function calculateAddonNextDueDate(?\App\Models\SubscriptionPlan $plan, $baseDate)
     {
+        // Sederhanakan: semua add-on ditagihkan per bulan
         $date = \Carbon\Carbon::parse($baseDate);
-        if ($plan && $plan->cycle_months) {
-            return $date->copy()->addMonths((int) $plan->cycle_months)->toDateString();
-        }
-
-        // Fallback sederhana berdasarkan billing_cycle bila cycle_months tidak tersedia
-        switch ($plan?->billing_cycle) {
-            case 'monthly':
-                return $date->copy()->addMonth()->toDateString();
-            case 'quarterly':
-                return $date->copy()->addMonths(3)->toDateString();
-            case 'semi_annually':
-            case '6_months':
-                return $date->copy()->addMonths(6)->toDateString();
-            case 'annually':
-                return $date->copy()->addYear()->toDateString();
-            case '2_years':
-                return $date->copy()->addYears(2)->toDateString();
-            case '3_years':
-                return $date->copy()->addYears(3)->toDateString();
-            default:
-                return null;
-        }
+        return $date->copy()->addMonth()->toDateString();
     }
 
     public function index(Request $request)
@@ -713,18 +693,22 @@ class CheckoutController extends Controller
 
             // Create order addons
             foreach ($addons as $addon) {
+                // Normalisasi: hanya add-on berulang yang memiliki billing_cycle 'monthly'
+                $isRecurring = ($addon->billing_type === 'recurring');
+
                 OrderAddon::create([
                     'order_id' => $order->id,
                     'product_addon_id' => $addon->id,
-                    'price' => $addon->price,
-                    'billing_cycle' => $subscriptionPlan->billing_cycle,
+                    // Gunakan harga pivot jika tersedia agar konsisten dengan keranjang
+                    'price' => $addon->pivot->price ?? $addon->price,
+                    'billing_cycle' => $isRecurring ? 'monthly' : null,
                     'quantity' => 1,
                     'addon_details' => $addon->toArray(),
                     // Status awal pending sampai invoice dibayar
                     'status' => 'pending',
-                    // Inisialisasi tanggal mulai agar tidak null; next_due_date dihitung dari siklus
+                    // Inisialisasi tanggal mulai agar tidak null; next_due_date hanya untuk recurring
                     'started_at' => now(),
-                    'next_due_date' => $this->calculateAddonNextDueDate($subscriptionPlan, now()),
+                    'next_due_date' => $isRecurring ? $this->calculateAddonNextDueDate($subscriptionPlan, now()) : null,
                 ]);
             }
 

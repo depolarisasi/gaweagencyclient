@@ -59,6 +59,7 @@ class DashboardController extends Controller
             'subscriptionPlan',
             'template',
             'orderAddons.productAddon',
+            'invoices',
         ]);
 
         return view('client.orders.show', compact('order'));
@@ -92,6 +93,33 @@ class DashboardController extends Controller
             $orderAddon->next_due_date = null;
             $orderAddon->save();
             alert()->success('Berhasil', 'Add-on one-time dibatalkan sekarang.');
+        }
+
+        return redirect()->route('client.orders.show', $order);
+    }
+
+    public function uncancelAddon(Request $request, Order $order, OrderAddon $orderAddon)
+    {
+        if ($order->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized access to order.');
+        }
+
+        if ($orderAddon->order_id !== $order->id) {
+            abort(404, 'Addon tidak ditemukan untuk order ini.');
+        }
+
+        // Tidak bisa meng-undo jika sudah dibatalkan permanen (one-time)
+        if ($orderAddon->status === 'cancelled') {
+            alert()->info('Info', 'Add-on sudah dibatalkan permanen dan tidak dapat di-undo.');
+            return redirect()->route('client.orders.show', $order);
+        }
+
+        if ($orderAddon->cancel_at_period_end) {
+            $orderAddon->cancel_at_period_end = false;
+            $orderAddon->save();
+            alert()->success('Berhasil', 'Penandaan batal di akhir periode telah dibatalkan.');
+        } else {
+            alert()->info('Info', 'Add-on tidak ditandai untuk dibatalkan di akhir periode.');
         }
 
         return redirect()->route('client.orders.show', $order);
@@ -147,7 +175,14 @@ class DashboardController extends Controller
         if ($invoice->user_id !== auth()->id()) {
             abort(403, 'Unauthorized access to invoice.');
         }
-        
+        // Eager load relations for detailed itemization and context
+        $invoice->loadMissing([
+            'items',
+            'order.product',
+            'order.template',
+            'order.orderAddons.productAddon',
+        ]);
+
         return view('client.invoices.show', compact('invoice'));
     }
     

@@ -106,7 +106,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Total Amount</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">{{ formatIDR($order->amount) }}</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-1">{{ formatIDR($order->total_amount) }}</p>
                         </div>
                         <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                             <i class="fas fa-dollar-sign text-green-600"></i>
@@ -259,7 +259,7 @@
                     @endif
 
                     <!-- Order Addons -->
-                    @if($order->addons && $order->addons->count() > 0)
+                    @if($order->orderAddons && $order->orderAddons->count() > 0)
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                             <div class="flex items-center space-x-3 mb-6">
                                 <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -269,19 +269,18 @@
                             </div>
                             
                             <div class="space-y-3">
-                                @foreach($order->addons as $addon)
+                                @foreach($order->orderAddons as $orderAddon)
                                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                         <div>
-                                            <p class="font-medium text-gray-900">{{ $addon->name }}</p>
-                                            @if($addon->description)
-                                                <p class="text-sm text-gray-600">{{ $addon->description }}</p>
+                                            <p class="font-medium text-gray-900">{{ $orderAddon->addon_details['name'] ?? ($orderAddon->productAddon->name ?? 'Addon') }}</p>
+                                            @php($desc = $orderAddon->addon_details['description'] ?? ($orderAddon->productAddon->description ?? null))
+                                            @if(!empty($desc))
+                                                <p class="text-sm text-gray-600">{{ $desc }}</p>
                                             @endif
                                         </div>
                                         <div class="text-right">
-                                            <p class="font-semibold text-gray-900">{{ formatIDR($addon->price) }}</p>
-                                            @if($addon->billing_cycle)
-                                                <p class="text-sm text-gray-500">/{{ $addon->billing_cycle }}</p>
-                                            @endif
+                                            <p class="font-semibold text-gray-900">{{ formatIDR($orderAddon->price ?? 0) }}</p>
+                                            <p class="text-sm text-gray-500">/{{ $orderAddon->billing_cycle_label }}</p>
                                         </div>
                                     </div>
                                 @endforeach
@@ -316,8 +315,8 @@
                         
                         <div class="space-y-3">
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Order Amount</span>
-                                <span class="font-medium">{{ formatIDR($order->amount) }}</span>
+                                <span class="text-gray-600">Subtotal</span>
+                                <span class="font-medium">{{ formatIDR(($order->subscription_amount ?? 0) + ($order->addons_amount ?? 0)) }}</span>
                             </div>
                             
                             @if($order->subscription_amount > 0)
@@ -344,9 +343,7 @@
                             <div class="border-t border-gray-200 pt-3">
                                 <div class="flex justify-between">
                                     <span class="font-semibold text-gray-900">Total</span>
-                                    <span class="font-bold text-lg text-gray-900">
-                                        {{ formatIDR($order->amount + $order->subscription_amount + $order->addons_amount + $order->setup_fee) }}
-                                    </span>
+                                    <span class="font-bold text-lg text-gray-900">{{ formatIDR($order->total_amount) }}</span>
                                 </div>
                             </div>
                         </div>

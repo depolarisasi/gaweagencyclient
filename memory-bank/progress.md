@@ -1,5 +1,19 @@
 # Progress
 
+Selesai (Plan B/C/D — 2025-11-10)
+- Admin InvoiceController: kirim email (`send()` → status `sent` + `InvoiceSentMail`) dan dukungan inline print melalui `download()`; respons JSON untuk JS view.
+- Email Template: `emails/invoice-sent.blade.php` ditambahkan menampilkan nomor, total, dan jatuh tempo.
+- Admin Invoice View: baris `Tripay Reference` ditampilkan bila ada.
+- Client Orders View: kartu “Paket Subscription” (nama, harga, siklus) dan baris “Periode” dari invoice terbaru.
+- Client DashboardController: alur cancel/uncancel add-on diverifikasi sesuai (recurring: `cancel_at_period_end`; one-time: batal segera), redirect & pesan konfirmasi siap.
+- Eager load pada `showOrder`: relasi `subscriptionPlan`, `template`, `orderAddons.productAddon`, dan `invoices` tersedia untuk tampilan.
+-
+- Support Ticket: notifikasi dibuat & terintegrasi
+  - Notifikasi: `SupportTicketCreatedNotification`, `SupportTicketRepliedNotification`, `SupportTicketStatusUpdatedNotification` + template markdown.
+  - Integrasi: Client `store()` kirim email ke pembuat; Admin `store/reply/status` kirim sesuai aksi (reply non-internal, assign/markInProgress/resolve/close/reopen).
+  - Ketahanan: semua pengiriman dibungkus `try/catch` + `Log::error` agar UI tidak gagal saat SMTP error.
+  - Pengujian: `SupportTicketNotificationsTest` lulus untuk jalur create, reply, dan status update.
+
 Verifikasi (2025-11-10)
 - Login klien berhasil (`john@example.com` / `password123`), halaman `/client/orders` dapat diakses dan ditampilkan.
 - Tombol "Details" mengarah ke `client.orders.show`; UI detail menampilkan status add-ons dan tombol batal sesuai tipe (recurring vs one-time).
@@ -28,6 +42,7 @@ Rekap status implementasi dan pengujian alur checkout.
 - UI Client Invoices: `index.blade.php` dan `show.blade.php` diselaraskan ke status `sent/overdue`; auto-refresh & countdown hanya untuk `sent`.
  - UI Admin Invoices: `admin/invoices/index.blade.php` menyelaraskan label untuk status `sent` (badge "Sent"), dan kartu statistik berubah dari "Pending Payment" menjadi "Sent" namun tetap menghitung `status='sent'`.
  - Client Dashboard: `DashboardController` kini menghitung jumlah invoice belum dibayar menggunakan `status='sent'` (menggantikan referensi lama ke `pending`).
+ - Client Add-ons: Uncancel (undo cancel at period end) berfungsi—route, controller, dan UI tombol konfirmasi siap pakai.
  - Commands (audit edge-case):
    - GenerateRecurringInvoices: filter `order_type='subscription'` dan guard idempoten per-periode (cek invoice existing dengan `billing_period_start == next_due_date`).
    - MarkOverdueInvoices: tambah `whereNotNull('due_date')` untuk keamanan.
@@ -64,6 +79,7 @@ Rekap status implementasi dan pengujian alur checkout.
  - PaymentController diselaraskan dengan skema Invoice: referensi pembayaran memakai `tripay_reference` (bukan `payment_reference`), validasi create payment untuk status `sent`, update status callback menyimpan `paid_date`.
 - Client Invoice: referensi ditampilkan dari `tripay_reference`, jumlah bayar fallback dari `tripay_data.amount_received`, tombol "Cetak PDF Invoice" ditambahkan dengan auto-print sederhana.
  - Client Invoice: referensi ditampilkan dari `tripay_reference`, jumlah bayar fallback dari `tripay_data.amount_received`, tombol "Cetak PDF Invoice" ditambahkan dengan auto-print sederhana. Tombol "Check Payment Status" di `client/invoices/show.blade.php` kini memakai `checkInvoicePaymentStatus(this)` dengan spinner/disable selama cek.
+ - Client Invoice Total: konsolidasi tampilan subtotal/tax/total memakai `invoice->amount`, `invoice->tax_amount`, dan menampilkan "Biaya Admin (Customer)" (`invoice->fee_customer`). "Biaya Admin (Merchant)" dihilangkan dari tampilan.
 - Polling status pembayaran: `client/payment/instructions.blade.php` dan `client/invoices/show.blade.php` memanggil route `client.invoices.payment.status`. Backend `PaymentController@checkPaymentStatus` kini menyinkronkan status invoice ke `paid/expired/failed/refunded` (mapping Tripay) saat polling, menyetel `paid_date`, mengaktifkan project, dan mengirim notifikasi `PaymentSuccessful` jika `PAID`.
  - Halaman Instruksi Pembayaran: fungsi copy VA diperbaiki menjadi `copyToClipboard(text, this)` agar tidak bergantung pada `event` global; tombol "Check Status" kini menampilkan spinner dan mendisable saat request berlangsung. Countdown diperbaiki untuk memakai timestamp Tripay (detik → ms).
 - TripayService::createTransaction mengirim request sebagai JSON (`asJson`) dan menerapkan fallback `callback_url` (config atau `route('payment.callback')`), `return_url` (home), serta `customer_phone` default bila kosong.
@@ -79,12 +95,29 @@ Aktivasi Order & Project + UI Orders
 - Client Dashboard `orders()` melakukan eager load `subscriptionPlan` dan `template`.
 - View `client/orders.blade.php` menampilkan produk dengan fallback ke `subscriptionPlan->name` dan template bila tersedia (tidak lagi `N/A`).
 
+Admin Orders Pricing Breakdown & Total (2025-11-10)
+- Order total dihitung dari `subscription_amount + addons_amount + setup_fee` melalui accessor `Order::getTotalAmountAttribute`.
+- Halaman `admin/orders/show.blade.php` menampilkan "Total Amount" dari `total_amount` dan Subtotal dari `subscription + addons`, sesuai rencana perbaikan.
+
+Aktivasi via Admin Update (2025-11-10)
+- `Admin\OrderController@update` kini secara otomatis membuat project ketika status berubah ke `active`, menyelaraskan jalur edit dengan jalur `activate` dan pembayaran sukses.
+
+Client Orders — Invoice Terkait & UX Proteksi (2025-11-10)
+- Controller `Client\DashboardController@showOrder` menambahkan eager load relasi `invoices`.
+- View `client/orders/show.blade.php` kini memiliki seksi "Invoice Terkait" berisi daftar invoice order dan tautan ke detail.
+- Tombol Cancel/Undo Add-on didisable sementara setelah konfirmasi untuk mencegah double submit.
+
 Client Orders Detail & Cancel Add-ons (baru)
 - Route `client.orders.show` untuk halaman detail order; tombol "Details" ditambahkan di daftar orders.
 - Route `client.orders.addons.cancel` memungkinkan client membatalkan add-on:
   - Recurring: ditandai `cancel_at_period_end = true`.
   - One-time: dibatalkan segera (`status='cancelled'`, `cancelled_at=now`, `next_due_date=null`).
 - View `client/orders/show.blade.php` menampilkan tabel add-ons dengan badge status, label billing, indikator "Cancel at period end", serta periode `started_at` dan `next_due_date` jika tersedia.
+
+Uncancel Add-ons (baru)
+- Route `client.orders.addons.uncancel` (POST) untuk menghapus penandaan `cancel_at_period_end`.
+- Controller `DashboardController::uncancelAddon()` melakukan otorisasi, menolak undo untuk `status='cancelled'`, dan mengembalikan add-on recurring ke aktif.
+- UI: tombol "Undo cancel at period end" dengan konfirmasi SweetAlert; indikator teks kecil menampilkan "Akan dibatalkan pada: {Next Due}" saat `cancel_at_period_end==true`.
 
 Scheduler Add-ons
 - Command `invoices:generate-recurring-addons` (harian 06:10), `addons:cancel-overdue` (07:10), dan `addons:apply-cancel-at-period-end` (07:15) telah ditambahkan ke `Console\\Kernel`.
@@ -100,6 +133,31 @@ UI Billing — Copy & Polling Status
 - Copy: di `checkout/billing.blade.php` dan `checkout/billing-cycle.blade.php`, tombol Copy diperbaiki agar tidak bergantung pada `event` global. Pemanggilan diubah menjadi `copyToClipboard(text, this)` dan fungsi menerima `buttonEl` untuk menampilkan feedback tersalin.
 - Polling: endpoint `/api/payment/status/{reference}` (CheckoutController::checkTripayStatus) kini melakukan sinkronisasi status invoice ketika status final (`PAID/EXPIRED/FAILED/REFUND`) terdeteksi, menyetel `paid_date`, mengaktifkan project terkait, dan mengirim notifikasi sukses pembayaran jika `PAID`. Tombol JS diperbaiki menjadi `checkPaymentStatus(this)` dengan spinner yang aman.
 
+Update Implementasi (2025-11-10 — Invoice & PDF)
+- DashboardController diperbarui untuk meload relasi invoice lengkap (`items`, `order.product`, `order.template`, `order.orderAddons.productAddon`).
+- Client Invoice View dirombak: memprioritaskan `invoice.items` sebagai sumber itemisasi, fallback ke `order_details` bila kosong; fee merchant tidak ditampilkan; subtotal memakai `invoice.amount`.
+- Add-ons diselaraskan ke siklus bulanan: `billing_cycle='monthly'` saat pembuatan `OrderAddon`, dan perhitungan `next_due_date` disederhanakan ke `+1 bulan`.
+- Label billing add-on disederhanakan: “Sekali” dan “Per Bulan”.
+- InvoicePdfService kini meload relasi tambahan agar PDF menampilkan konteks lengkap.
+- Template PDF invoice diganti ke layout profesional dengan header brand, metadata, tabel item (deskripsi, periode, jumlah), pajak, dan total.
+- Migrasi DB berhasil: penambahan kolom pada `order_addons`, kolom `renewal_type` dan `items_snapshot` pada `invoices`, serta pembuatan tabel `invoice_items`. Satu migration diperbaiki dengan penghapusan ketergantungan `after('is_renewal')` secara kondisional.
+- Server dev dijalankan dan preview tersedia di `http://127.0.0.1:8000/`. Error ORB eksternal pada resource pihak ketiga (Google) tidak memengaruhi fungsionalitas inti.
+
+## 2025-11-11 — Checkout E2E + Add-on Recurring
+- Checkout end-to-end berhasil hingga halaman Billing.
+- Add-on terverifikasi: `SSL Certificate` (recurring). Subtotal Add-ons: `Rp 150.000` sesuai Ringkasan Pesanan.
+- Bukti visual: screenshot `billing-page` dan `client-orders-index` (akses orders tanpa login diarahkan ke login).
+- Catatan: verifikasi detail order via Billing karena `/client/orders` membutuhkan autentikasi.
+- Langkah berikut: uji alur pembayaran Tripay hingga status `PAID`, lalu konfirmasi aktivasi order & project; tambah variasi add-on (≥2) untuk memvalidasi subtotal multi-add-on.
+
+## 2025-11-11 — Normalisasi Add-on Recurring
+- Normalisasi pembuatan `OrderAddon` di `CheckoutController@submit`:
+  - `billing_cycle` diset ke `'monthly'` hanya untuk add-on `billing_type='recurring'`.
+  - `next_due_date` dihitung `+1 bulan` hanya untuk add-on recurring; one-time → `next_due_date=null`.
+  - Harga add-on pada OrderAddon menggunakan `pivot->price` bila tersedia untuk konsistensi dengan keranjang/itemisasi Tripay.
+- Dampak UI: label billing add-on tetap konsisten (`Sekali` bila `billing_cycle=null`, `Per Bulan` bila `'monthly'`).
+- Verifikasi: alur checkout tetap berjalan, dan OrderAddon yang one-time tidak memiliki `billing_cycle`/`next_due_date`.
+
 ## Yang Belum
 - Penyesuaian test untuk status baru `sent/overdue` di area invoice & scheduler.
 - Audit referensi sisa ke `pending` di command lama `CancelExpiredInvoices`/`CancelUnpaidInvoices` (tidak dijadwalkan, low priority).
@@ -112,7 +170,25 @@ UI Billing — Copy & Polling Status
 - Sinkronisasi field pembayaran lama: rujukan di view/controller yang masih memakai `payment_reference` akan dihapus/diubah ke `tripay_reference` (ongoing audit ringan).
  - Tambah test untuk fallback polling agar tidak terjadi double-processing ketika callback dan polling terjadi berdekatan (mitigasi diarahkan via idempotency update).
 - Pertimbangkan guard server-side di `CheckoutController@summary` untuk mendeteksi state billing (mis. keberadaan `tripay_reference`) dan arahkan ulang ke `checkout.index` agar robust meski JS dimatikan.
+ - Tambah E2E test untuk Cancel/Undo flow pada Client Orders.
 
 Tambahan
 - Tambah tests untuk accessor `Order::invoice` dan `Order::project` (latest/active, null-safe).
 - Tambah e2e verifikasi invoice `PAID` → order aktif → project aktif dengan `start_date` terset.
+Support Tickets — Attachments (2025-11-10)
+- Admin UI: form balasan diperbarui dengan input `attachments[]` (multiple, accept: pdf/png/jpg/jpeg/gif) dan `enctype` multipart.
+- Admin Thread: lampiran per-reply dirender di view menggunakan `Storage::url($file['path'])`.
+- Admin Controller: `SupportTicketController@reply` memvalidasi dan menyimpan lampiran ke `public/ticket_attachments/{ticket_id}` lalu meneruskan metadata ke `addReply(...)`.
+- Notifikasi: tetap mengirim `SupportTicketRepliedNotification` untuk balasan non-internal.
+- Environment: `php artisan storage:link` dijalankan; catatan alternatif junction (`mklink /J`) ditambahkan untuk Windows bila symlink gagal.
+- Logging: penanganan error upload ditingkatkan dengan `Log::warning/error` saat file invalid/gagal simpan.
+## 2025-11-11 — PDF Invoice Redesign & Helper Terbilang
+- InvoicePdfService: mengaktifkan `isRemoteEnabled` agar PDF dapat memuat resource eksternal.
+- Template PDF `pdf/invoice.blade.php`: tabel item menjadi 4 kolom (Deskripsi, QTY, Harga Satuan, Jumlah); domain dan add-ons ditampilkan dengan ringkas; Pajak & Total memakai `formatIDR`.
+- Footer PDF: menampilkan baris “Terbilang: {teks} rupiah” bila `terbilang_idr()` tersedia.
+- Helper: `terbilang_idr()` ditambahkan di `app/helpers.php` untuk konversi angka ke teks bahasa Indonesia.
+- Debug route: `GET /debug/invoice/{invoice?}` tersedia di environment local untuk preview PDF tanpa autentikasi.
+- Verifikasi: server dev berjalan (`php artisan serve`), preview dibuka di `http://127.0.0.1:8000/debug/invoice` dan layout baru terkonfirmasi.
+
+## Tertutup
+- PDF invoice redesain dan helper terbilang telah diterapkan serta diverifikasi di environment lokal.

@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
 use App\Models\TicketReply;
+use App\Notifications\SupportTicketCreatedNotification;
+use App\Notifications\SupportTicketRepliedNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -106,7 +109,18 @@ class SupportTicketController extends Controller
             );
         }
         
-        // TODO: Send notification to admin/staff
+        // Notify client (creator) about ticket creation
+        try {
+            $ticket->loadMissing('user');
+            if ($ticket->user) {
+                $ticket->user->notify(new SupportTicketCreatedNotification($ticket));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send SupportTicketCreatedNotification', [
+                'ticket_id' => $ticket->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         if ($request->expectsJson()) {
             return response()->json([
@@ -310,7 +324,18 @@ class SupportTicketController extends Controller
             $ticket->update(['status' => 'in_progress']);
         }
         
-        // TODO: Send notification to assigned staff
+        // Notify assigned staff (if any) that client replied
+        try {
+            $ticket->loadMissing('assignedUser');
+            if ($ticket->assignedUser) {
+                $ticket->assignedUser->notify(new SupportTicketRepliedNotification($ticket, $reply));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to send SupportTicketRepliedNotification to staff', [
+                'ticket_id' => $ticket->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
         
         if ($request->expectsJson()) {
             return response()->json([

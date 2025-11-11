@@ -86,39 +86,74 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @if($invoice->order)
+                                        @if($invoice->items && $invoice->items->count() > 0)
+                                            @foreach($invoice->items as $item)
+                                                <tr>
+                                                    <td>
+                                                        <div class="font-medium">{{ $item->description ?? 'Item' }}</div>
+                                                        @if(!empty($item->meta) && isset($item->meta['template']))
+                                                            <div class="text-sm text-gray-600">Template: {{ $item->meta['template']['name'] ?? '' }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if(!empty($item->billing_period_start) && !empty($item->billing_period_end))
+                                                            {{ \Carbon\Carbon::parse($item->billing_period_start)->format('d M Y') }} -
+                                                            {{ \Carbon\Carbon::parse($item->billing_period_end)->format('d M Y') }}
+                                                        @else
+                                                            {{ ucfirst($item->billing_cycle ?? 'monthly') }}
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-right font-medium">
+                                                        Rp {{ number_format($item->amount ?? 0, 0, ',', '.') }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @elseif($invoice->order)
+                                            @php($order = $invoice->order)
+                                            <!-- Subscription/Base Service Row with Template info -->
                                             <tr>
                                                 <td>
-                                                    <div class="font-medium">{{ $invoice->order->product->name ?? 'Service' }}</div>
-                                                    @if($invoice->order->order_details && isset($invoice->order->order_details['template']))
-                                                        <div class="text-sm text-gray-600">
-                                                            Template: {{ $invoice->order->order_details['template']['name'] }}
-                                                        </div>
+                                                    <div class="font-medium">{{ $order->product->name ?? 'Service' }}</div>
+                                                    @if($order->template)
+                                                        <div class="text-sm text-gray-600">Template: {{ $order->template->name }}</div>
+                                                    @elseif($order->order_details && isset($order->order_details['template']))
+                                                        <div class="text-sm text-gray-600">Template: {{ $order->order_details['template']['name'] }}</div>
                                                     @endif
                                                 </td>
                                                 <td>
                                                     @if($invoice->billing_period_start && $invoice->billing_period_end)
                                                         {{ $invoice->billing_period_start->format('d M Y') }} - {{ $invoice->billing_period_end->format('d M Y') }}
                                                     @else
-                                                        {{ ucfirst($invoice->order->billing_cycle) }}
+                                                        {{ ucfirst($order->billing_cycle ?? 'monthly') }}
                                                     @endif
                                                 </td>
                                                 <td class="text-right font-medium">
-                                                    Rp {{ number_format($invoice->order->subscription_amount ?? 0, 0, ',', '.') }}
+                                                    Rp {{ number_format($order->subscription_amount ?? ($invoice->amount ?? 0), 0, ',', '.') }}
                                                 </td>
                                             </tr>
-                                            
-                                            @if($invoice->order->order_details && isset($invoice->order->order_details['addons']))
-                                                @foreach($invoice->order->order_details['addons'] as $addon)
+                                            <!-- Domain Row (if any) -->
+                                            @php($domainAmount = $order->domain_amount ?? 0)
+                                            @if($domainAmount > 0)
+                                                <tr>
+                                                    <td>
+                                                        <div class="font-medium">Domain</div>
+                                                        @if(!empty($order->domain_name))
+                                                            <div class="text-sm text-gray-600">{{ $order->domain_name }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td>-</td>
+                                                    <td class="text-right font-medium">Rp {{ number_format($domainAmount, 0, ',', '.') }}</td>
+                                                </tr>
+                                            @endif
+                                            <!-- Add-ons Rows from orderAddons when invoice items are empty -->
+                                            @if($order->orderAddons && $order->orderAddons->count() > 0)
+                                                @foreach($order->orderAddons as $orderAddon)
                                                     <tr>
                                                         <td>
-                                                            <div class="font-medium">{{ $addon['name'] }}</div>
-                                                            <div class="text-sm text-gray-600">{{ $addon['billing_type'] }}</div>
+                                                            <div class="font-medium">{{ $orderAddon->addon_details['name'] ?? ($orderAddon->productAddon->name ?? 'Addon') }}</div>
                                                         </td>
-                                                        <td>-</td>
-                                                        <td class="text-right font-medium">
-                                                            Rp {{ number_format($addon['price'], 0, ',', '.') }}
-                                                        </td>
+                                                        <td>{{ $orderAddon->billing_cycle_label }}</td>
+                                                        <td class="text-right font-medium">Rp {{ number_format($orderAddon->price ?? 0, 0, ',', '.') }}</td>
                                                     </tr>
                                                 @endforeach
                                             @endif
@@ -141,12 +176,8 @@
                             <div class="flex justify-end">
                                 <div class="w-64">
                                     @php
-                                        $order = $invoice->order;
-                                        $subscription = $order->subscription_amount ?? 0;
-                                        $addonsTotal = $order->addons_amount ?? 0;
-                                        $domainTotal = $order->domain_amount ?? 0;
-                                        $subtotalCalc = ($subscription + $addonsTotal + $domainTotal);
-                                        $platformCustomerFee = max(0, ($invoice->total_amount ?? 0) - $subtotalCalc);
+                                        $subtotalCalc = $invoice->amount ?? 0;
+                                        $feeCustomer = $invoice->fee_customer ?? 0;
                                     @endphp
                                     <div class="flex justify-between mb-2">
                                         <span class="text-gray-600">Subtotal:</span>
@@ -156,35 +187,14 @@
                                         <span class="text-gray-600">Tax (PPN 11%):</span>
                                         <span class="font-medium">Rp {{ number_format($invoice->tax_amount, 0, ',', '.') }}</span>
                                     </div>
-
-                                    @if($platformCustomerFee > 0)
-                                        <div class="flex justify-between mb-2">
-                                            <span class="text-gray-600">Biaya Admin (Platform):</span>
-                                            <span class="font-medium">Rp {{ number_format($platformCustomerFee, 0, ',', '.') }}</span>
-                                        </div>
-                                    @endif
-                                    
-                                    <!-- Tripay Fee Information -->
-                                    @if($invoice->fee_merchant && $invoice->fee_merchant > 0)
-                                        <div class="flex justify-between mb-2">
-                                            <span class="text-gray-600">Biaya Admin (Merchant):</span>
-                                            <span class="font-medium">Rp {{ number_format($invoice->fee_merchant, 0, ',', '.') }}</span>
-                                        </div>
-                                    @endif
-                                    
-                                    @if($invoice->fee_customer && $invoice->fee_customer > 0)
+                                    @if($feeCustomer > 0)
                                         <div class="flex justify-between mb-2">
                                             <span class="text-gray-600">Biaya Admin (Customer):</span>
-                                            <span class="font-medium">Rp {{ number_format($invoice->fee_customer, 0, ',', '.') }}</span>
+                                            <span class="font-medium">Rp {{ number_format($feeCustomer, 0, ',', '.') }}</span>
                                         </div>
                                     @endif
                                     
-                                    @if($invoice->total_fee && $invoice->total_fee > 0)
-                                        <div class="flex justify-between mb-2">
-                                            <span class="text-orange-600 font-medium">Total Biaya Admin:</span>
-                                            <span class="font-medium text-orange-600">Rp {{ number_format($invoice->total_fee, 0, ',', '.') }}</span>
-                                        </div>
-                                    @endif
+                                    <!-- Hanya tampil Biaya Admin (Customer); Biaya Admin (Merchant) tidak ditampilkan -->
                                     
                                     <div class="border-t pt-2">
                                         <div class="flex justify-between">

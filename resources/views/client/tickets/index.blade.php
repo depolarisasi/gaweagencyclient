@@ -132,7 +132,7 @@
                             </div>
                             
                             <h4 class="text-xl font-medium text-gray-900 mb-2">{{ $ticket->subject }}</h4>
-                            <p class="text-gray-600 mb-4">{{ Str::limit($ticket->description, 150) }}</p>
+                            <p class="text-gray-600 mb-4">{{ Str::limit(strip_tags($ticket->description), 150) }}</p>
                             
                             <div class="flex items-center space-x-6 text-sm text-gray-500">
                                 <div class="flex items-center space-x-1">

@@ -86,6 +86,7 @@
       <!-- Replies -->
       <div class="space-y-4 mb-6">
         <h2 class="text-lg font-semibold text-gray-900">Conversation</h2>
+        @php use Illuminate\Support\Facades\Storage; @endphp
         @forelse($ticket->replies->sortBy('created_at') as $reply)
           <div class="bg-white rounded-md shadow-sm border {{ $reply->is_internal ? 'border-purple-300' : 'border-gray-200' }} p-4">
             <div class="flex items-center justify-between mb-2">
@@ -99,6 +100,20 @@
               <div class="text-sm text-gray-500">{{ $reply->created_at->format('M d, Y H:i') }}</div>
             </div>
             <div class="prose max-w-none text-gray-700">{!! $reply->message !!}</div>
+            @if($reply->attachments)
+              <div class="mt-3 border-t pt-3">
+                <div class="text-sm font-medium text-gray-700 mb-2">
+                  <i class="fas fa-paperclip mr-2"></i>Attachments
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  @foreach($reply->attachments as $file)
+                    <a href="{{ Storage::url($file['path']) }}" target="_blank" class="btn btn-xs btn-outline">
+                      <i class="fas fa-file mr-1"></i>{{ $file['name'] ?? basename($file['path']) }}
+                    </a>
+                  @endforeach
+                </div>
+              </div>
+            @endif
           </div>
         @empty
           <div class="bg-white rounded-md border border-gray-200 p-6 text-center text-gray-600">Belum ada balasan.</div>
@@ -109,7 +124,7 @@
       @if($ticket->status !== 'closed')
       <div id="replySection" class="bg-white rounded-md shadow-sm border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Kirim Balasan</h3>
-        <form method="POST" action="{{ route('admin.tickets.reply', $ticket) }}" class="space-y-4">
+        <form method="POST" action="{{ route('admin.tickets.reply', $ticket) }}" enctype="multipart/form-data" class="space-y-4">
           @csrf
           <input id="admin-show-reply" type="hidden" name="message">
           <trix-editor input="admin-show-reply" class="trix-content" placeholder="Tulis balasan..."></trix-editor>
@@ -117,6 +132,11 @@
             <span class="label-text">Catatan internal (tidak terlihat klien)</span>
             <input type="checkbox" name="is_internal" class="checkbox checkbox-primary">
           </label>
+          <div class="form-control">
+            <label class="label"><span class="label-text font-medium">Lampiran (opsional)</span></label>
+            <input type="file" name="attachments[]" multiple accept=".pdf,.png,.jpg,.jpeg,.gif" class="file-input file-input-bordered w-full" />
+            <p class="text-xs text-gray-500 mt-1">Diizinkan: PDF, PNG, JPG, GIF. Maks 10MB per file.</p>
+          </div>
           <div class="flex justify-end">
             <button type="submit" class="btn btn-primary"><i class="fas fa-reply mr-2"></i>Kirim</button>
           </div>

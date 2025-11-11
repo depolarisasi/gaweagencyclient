@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Services\InvoicePdfService;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\InvoiceSentMail;
 
 class InvoiceController extends Controller
 {
@@ -224,13 +226,28 @@ class InvoiceController extends Controller
         
         // Update status to sent
         $invoice->update(['status' => 'sent']);
-        
-        // TODO: Send email notification to client
-        // TODO: Create Tripay payment link if needed
-        
+
+        // Send email notification to client (best-effort)
+        try {
+            $invoice->loadMissing('user');
+            if ($invoice->user && $invoice->user->email) {
+                Mail::to($invoice->user->email)->send(new InvoiceSentMail($invoice));
+            }
+            $message = 'Invoice sent and email delivered (if possible)';
+            $status = 'success';
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send invoice email', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+            ]);
+            $message = 'Invoice marked as sent, but email failed to send';
+            $status = 'warning';
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Invoice sent successfully'
+            'message' => $message,
+            'status' => $status,
         ]);
     }
     
@@ -328,6 +345,15 @@ class InvoiceController extends Controller
             }
 
             $filename = 'Invoice-' . ($invoice->invoice_number ?? $invoice->id) . '.pdf';
+
+            // Support inline viewing for printing if requested
+            if (request('inline') === '1') {
+                return response($pdfBinary, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="' . $filename . '"',
+                ]);
+            }
+
             return response($pdfBinary, 200, [
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => 'attachment; filename="' . $filename . '"',

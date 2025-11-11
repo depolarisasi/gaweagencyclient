@@ -140,6 +140,7 @@ class OrderController extends Controller
      */
     public function update(Request $request, Order $order)
     {
+        $previousStatus = $order->status;
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'product_id' => 'nullable|exists:products,id',
@@ -169,6 +170,11 @@ class OrderController extends Controller
         }
 
         $order->update($validated);
+
+        // Buat project otomatis jika status berubah menjadi active melalui update
+        if ($previousStatus !== 'active' && $order->status === 'active') {
+            $this->createProjectForOrder($order);
+        }
 
         alert()->success('Success', 'Order updated successfully.');
         return redirect()->route('admin.orders.show', $order);
