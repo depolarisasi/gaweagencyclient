@@ -41,7 +41,7 @@
                                 <p class="text-gray-600">Invoice Date: {{ $invoice->created_at->format('d M Y') }}</p>
                                 <p class="text-gray-600">Due Date: {{ $invoice->due_date->format('d M Y') }}</p>
                             </div>
-                            <div class="text-right">
+                             <div class="text-right">
                                 @if($invoice->status === 'sent')
                                     <div class="badge badge-warning badge-lg">Menunggu Pembayaran</div>
                                 @elseif($invoice->status === 'paid')

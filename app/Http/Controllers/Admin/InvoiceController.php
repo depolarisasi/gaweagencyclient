@@ -274,8 +274,9 @@ class InvoiceController extends Controller
             'payment_method' => $validated['payment_method']
         ]);
         
-        // TODO: Create project if this is from an order
-        // TODO: Send payment confirmation email
+        // Aktivasi order & project via service, kirim notifikasi pembayaran
+        app(\App\Services\ActivationService::class)
+            ->activateOrderAndProjectFromInvoice($invoice, true);
         
         return response()->json([
             'success' => true,

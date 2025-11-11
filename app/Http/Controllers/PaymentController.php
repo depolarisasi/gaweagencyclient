@@ -171,23 +171,10 @@ class PaymentController extends Controller
             // Update invoice status based on payment status; only proceed if transitioned to PAID
             $transitionToPaid = $this->updateInvoiceStatus($invoice, $callbackData);
 
-            // If payment transitioned to paid, activate order & project
+            // Jika terjadi transisi ke paid, aktifkan via service & kirim notifikasi
             if ($transitionToPaid) {
-                $this->activateOrder($invoice);
-                $this->activateProject($invoice);
-
-                // Send payment successful notification to client
-                try {
-                    if ($invoice->user) {
-                        $invoice->user->notify(new PaymentSuccessful($invoice));
-                    }
-                } catch (\Throwable $e) {
-                    Log::warning('Failed to send PaymentSuccessful notification', [
-                        'invoice_id' => $invoice->id,
-                        'user_id' => $invoice->user_id,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
+                app(\App\Services\ActivationService::class)
+                    ->activateOrderAndProjectFromInvoice($invoice, true);
             }
 
             DB::commit();
@@ -255,95 +242,7 @@ class PaymentController extends Controller
     /**
      * Activate project after successful payment
      */
-    private function activateProject(Invoice $invoice)
-    {
-        $project = Project::where('order_id', $invoice->order_id)->first();
-        
-        if ($project && $project->status === 'pending') {
-            $project->update([
-                'status' => 'active',
-                'start_date' => now(),
-            ]);
-
-            Log::info('Project activated after payment', [
-                'project_id' => $project->id,
-                'invoice_id' => $invoice->id
-            ]);
-            return;
-        }
-
-        if (!$project) {
-            $order = Order::find($invoice->order_id);
-            if ($order) {
-                $projectName = $this->generateProjectName($order);
-                $websiteUrl = $order->domain_name ? ('https://' . $order->domain_name) : null;
-
-                $project = Project::create([
-                    'project_name' => $projectName,
-                    'user_id' => $order->user_id,
-                    'order_id' => $order->id,
-                    'template_id' => $order->template_id,
-                    'status' => 'active',
-                    'website_url' => $websiteUrl,
-                    'start_date' => now(),
-                ]);
-
-                Log::info('Project auto-created & activated after payment', [
-                    'project_id' => $project->id,
-                    'invoice_id' => $invoice->id,
-                    'order_id' => $order->id,
-                ]);
-            }
-        }
-    }
-
-    private function activateOrder(Invoice $invoice)
-    {
-        $order = Order::find($invoice->order_id);
-        if (!$order) { return; }
-
-        // Pastikan order aktif setelah pembayaran
-        if ($order->status !== 'active') {
-            $order->status = 'active';
-            $order->activated_at = $order->activated_at ?? now();
-        }
-
-        // Update next_due_date ke akhir periode penagihan invoice
-        if ($invoice->billing_period_end) {
-            $order->next_due_date = $invoice->billing_period_end;
-        } else {
-            // fallback
-            $order->next_due_date = $order->calculateNextDueDate();
-        }
-        $order->save();
-
-        Log::info('Order activated/updated after payment', [
-            'order_id' => $order->id,
-            'invoice_id' => $invoice->id,
-            'next_due_date' => $order->next_due_date,
-        ]);
-    }
-
-    private function generateProjectName(Order $order): string
-    {
-        $baseName = '';
-
-        if ($order->domain_name) {
-            $baseName = 'Website for ' . $order->domain_name;
-        } elseif ($order->template) {
-            $baseName = $order->template->name . ' Project';
-        } elseif ($order->product) {
-            $baseName = $order->product->name . ' Project';
-        } else {
-            $baseName = 'Project';
-        }
-
-        if ($order->user) {
-            $baseName .= ' for ' . $order->user->name;
-        }
-
-        return $baseName;
-    }
+    // Metode aktivasi lama telah digantikan oleh ActivationService
 
     /**
      * Show payment instructions page
@@ -395,19 +294,8 @@ class PaymentController extends Controller
                 $transitionToPaid = $this->updateInvoiceStatus($invoice, $tripayResponse['data']);
 
                 if ($transitionToPaid) {
-                    $this->activateOrder($invoice);
-                    $this->activateProject($invoice);
-                    try {
-                        if ($invoice->user) {
-                            $invoice->user->notify(new PaymentSuccessful($invoice));
-                        }
-                    } catch (\Throwable $e) {
-                        Log::warning('Failed to send PaymentSuccessful notification (polling)', [
-                            'invoice_id' => $invoice->id,
-                            'user_id' => $invoice->user_id,
-                            'message' => $e->getMessage(),
-                        ]);
-                    }
+                    app(\App\Services\ActivationService::class)
+                        ->activateOrderAndProjectFromInvoice($invoice, true);
                 }
             }
         } catch (\Throwable $e) {

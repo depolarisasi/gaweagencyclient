@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\TldPricing;
 
 class DomainService
 {
@@ -222,7 +223,8 @@ class DomainService
      */
     public function getSupportedTlds(): array
     {
-        return [
+        // Static defaults
+        $defaults = [
             'com' => ['name' => '.com', 'popular' => true],
             'net' => ['name' => '.net', 'popular' => true],
             'org' => ['name' => '.org', 'popular' => true],
@@ -236,6 +238,30 @@ class DomainService
             'co.uk' => ['name' => '.co.uk', 'popular' => false],
             'com.au' => ['name' => '.com.au', 'popular' => false],
         ];
+
+        // Merge with DB tlds
+        try {
+            $dbTlds = TldPricing::query()
+                ->where('is_active', true)
+                ->orderBy('tld')
+                ->pluck('tld')
+                ->all();
+
+            foreach ($dbTlds as $tld) {
+                if (!isset($defaults[$tld])) {
+                    $defaults[$tld] = [
+                        'name' => '.' . $tld,
+                        'popular' => false,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('DomainService: gagal memuat TLD dari DB, gunakan default', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $defaults;
     }
 
     /**
@@ -243,7 +269,8 @@ class DomainService
      */
     public function getDomainPrices(): array
     {
-        return [
+        // Static fallback
+        $fallback = [
             'com' => 150000,
             'net' => 130000,
             'org' => 140000,
@@ -257,5 +284,25 @@ class DomainService
             'co.uk' => 200000,
             'com.au' => 220000,
         ];
+
+        try {
+            $prices = TldPricing::query()
+                ->where('is_active', true)
+                ->get(['tld', 'price'])
+                ->pluck('price', 'tld')
+                ->toArray();
+
+            // Jika DB kosong, gunakan fallback
+            if (empty($prices)) {
+                return $fallback;
+            }
+
+            return $prices;
+        } catch (\Throwable $e) {
+            Log::warning('DomainService: gagal memuat harga TLD dari DB, gunakan fallback', [
+                'error' => $e->getMessage(),
+            ]);
+            return $fallback;
+        }
     }
 }

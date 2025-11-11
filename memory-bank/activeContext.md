@@ -1,5 +1,29 @@
 # Active Context
 
+Update (2025-11-11 — TLD Pricing, DomainService, & Admin markAsPaid)
+- CRUD TLD Pricing di Admin tersedia via resource route `admin.tld-pricings.*`; link "TLD Pricing" ditambahkan ke sidebar (bagian Management) untuk akses cepat.
+- DomainService diperbarui: `getSupportedTlds()` menggabungkan default dengan TLD aktif dari DB (`tld_pricings`), dan `getDomainPrices()` mengambil harga dari DB dengan fallback statik bila kosong/error.
+- Database: migrasi tabel `tld_pricings` dijalankan dan seeder awal dimasukkan (berbagai TLD umum dengan harga). Ini memungkinkan harga domain dinamis tersinkron dengan UI/Checkout.
+- Admin Invoice — markAsPaid: jalur admin kini menyelaraskan aktivasi order & project saat invoice ditandai `paid` (set `status=active`, `activated_at`, `next_due_date = Order::calculateNextDueDate()`; aktifkan/membuat project dengan `start_date`). Ditambahkan logging error untuk pemantauan. Notifikasi/email `PaymentSuccessful` dikirim ke klien (best-effort) dan melampirkan PDF invoice bila tersedia.
+- Verifikasi UI: halaman indeks `TLD Pricing` diverifikasi melalui preview `http://127.0.0.1:8000/admin/tld-pricings`.
+
+Update (2025-11-11 — Refactor Aktivasi via Service)
+- `ActivationService::activateOrderAndProjectFromInvoice($invoice, bool $sendNotification)` dibuat untuk mengkapsulasi aktivasi order & project dari invoice berstatus `paid`.
+- Admin `InvoiceController@markAsPaid` kini menggunakan service ini untuk aktivasi dan pengiriman notifikasi `PaymentSuccessful`, sehingga menghindari duplikasi logic lintas jalur.
+- Penetapan `order.next_due_date` konsisten: gunakan `invoice.billing_period_end` bila tersedia, fallback ke `Order::calculateNextDueDate()`.
+- Logging error dipusatkan di service agar lebih mudah dipantau.
+
+Update (2025-11-11 — Checkout/Payment → ActivationService)
+- Checkout: blok aktivasi `PAID` di `CheckoutController@checkTripayStatus` di-refactor untuk memanggil `ActivationService::activateOrderAndProjectFromInvoice($invoice, false)` (notifikasi dimatikan untuk menghindari duplikasi; notifikasi dikirim dari PaymentController).
+- Payment: pada callback Tripay dan fallback polling (`PaymentController@checkPaymentStatus`), jika terjadi transisi ke `paid`, memanggil `ActivationService::activateOrderAndProjectFromInvoice($invoice, true)` untuk aktivasi + notifikasi.
+- Dampak: jalur aktivasi kini DRY, penetapan `next_due_date` konsisten, dan pengiriman notifikasi terpusat di jalur Payment.
+
+Update (2025-11-11 — Cleanup & Audit Aktivasi)
+- Cleanup PaymentController: menghapus metode privat lama `activateOrder`, `activateProject`, dan `generateProjectName` yang telah digantikan oleh `ActivationService`.
+- Audit duplikasi: jalur aktivasi pasca pembayaran kini terpusat melalui `ActivationService` di Admin `markAsPaid`, Payment (callback & polling), dan Checkout (status final `PAID`). Tidak ditemukan duplikasi aktivasi lain di controller.
+- Audit konsistensi: penetapan `order.next_due_date` konsisten memakai `invoice.billing_period_end` (fallback perhitungan) melalui service. Notifikasi `PaymentSuccessful` terpusat di Payment.
+- Catatan: `Livewire\CheckoutSummary` memiliki pembuatan Project pra-pembayaran (legacy/demo) dan tidak menjadi bagian jalur paid—dibiarkan apa adanya.
+
 Update (2025-11-11 — Kebijakan Penagihan & Pengingat)
 - Command `CancelExpiredInvoices` dan `CancelUnpaidInvoices` dihapus untuk konsistensi kebijakan (penandaan `overdue` via `invoices:mark-overdue`, suspend H+14 via `projects:suspend-overdue`). Tidak ada jadwal untuk cancel otomatis berdasarkan `pending`.
 - Idempoten reminders: kolom JSON `invoices.reminders` menyimpan penanda per-offset (H-7/H-1/H+3/H+7/H+14) agar pengiriman tidak duplikat saat rerun; logging per-batch ditambahkan pada `invoices:send-reminders`.

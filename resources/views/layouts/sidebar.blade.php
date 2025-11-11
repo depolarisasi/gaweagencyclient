@@ -49,6 +49,11 @@
                             <i class="fas fa-file-invoice w-5"></i>
                             <span>Invoices</span>
                         </a>
+                        
+                        <a href="{{ route('admin.tld-pricings.index') }}" class="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
+                            <i class="fas fa-globe w-5"></i>
+                            <span>TLD Pricing</span>
+                        </a>
                     </div>
                     
                     <div class="pt-4">

@@ -1049,64 +1049,10 @@ class CheckoutController extends Controller
 
                         $invoice->update($updateData);
 
-                        // Aktifkan order & project bila pembayaran sukses
+                        // Aktivasi lewat service saat status PAID (notifikasi ditangani di PaymentController)
                         if ($status === 'PAID') {
-                            try {
-                                // Aktifkan order jika masih pending
-                                $order = \App\Models\Order::find($invoice->order_id);
-                                if ($order && $order->status === 'pending') {
-                                    $order->status = 'active';
-                                    $order->activated_at = now();
-                                    if (!$order->next_due_date) {
-                                        $order->next_due_date = $order->calculateNextDueDate();
-                                    }
-                                    $order->save();
-                                }
-
-                                $project = \App\Models\Project::where('order_id', $invoice->order_id)->first();
-                                if ($project && $project->status === 'pending') {
-                                    $project->update([
-                                        'status' => 'active',
-                                        'start_date' => now(),
-                                    ]);
-                                } elseif (!$project && isset($order)) {
-                                    // Buat project otomatis bila belum ada
-                                    $baseName = '';
-                                    if ($order->domain_name) {
-                                        $baseName = 'Website for ' . $order->domain_name;
-                                    } elseif ($order->template) {
-                                        $baseName = $order->template->name . ' Project';
-                                    } elseif ($order->product) {
-                                        $baseName = $order->product->name . ' Project';
-                                    } else {
-                                        $baseName = 'Project';
-                                    }
-                                    if ($order->user) {
-                                        $baseName .= ' for ' . $order->user->name;
-                                    }
-
-                                    $websiteUrl = $order->domain_name ? ('https://' . $order->domain_name) : null;
-
-                                    \App\Models\Project::create([
-                                        'project_name' => $baseName,
-                                        'user_id' => $order->user_id,
-                                        'order_id' => $order->id,
-                                        'template_id' => $order->template_id,
-                                        'status' => 'active',
-                                        'website_url' => $websiteUrl,
-                                        'start_date' => now(),
-                                    ]);
-                                }
-                                // Kirim notifikasi sukses pembayaran
-                                if ($invoice->user) {
-                                    $invoice->user->notify(new \App\Notifications\PaymentSuccessful($invoice));
-                                }
-                            } catch (\Throwable $e) {
-                                \Log::warning('Failed to activate project or send notification (polling)', [
-                                    'invoice_id' => $invoice->id,
-                                    'message' => $e->getMessage(),
-                                ]);
-                            }
+                            app(\App\Services\ActivationService::class)
+                                ->activateOrderAndProjectFromInvoice($invoice, false);
                         }
 
                         \Log::info('Invoice status synchronized via polling', [

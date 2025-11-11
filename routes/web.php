@@ -242,6 +242,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/templates/sort-order', [AdminTemplateController::class, 'updateSortOrder'])->name('admin.templates.sort-order');
     Route::get('/templates-statistics', [AdminTemplateController::class, 'statistics'])->name('admin.templates.statistics');
     Route::get('/templates-search', [AdminTemplateController::class, 'search'])->name('admin.templates.search');
+
+    // TLD Pricing Management Routes
+    Route::resource('tld-pricings', \App\Http\Controllers\Admin\TldPricingController::class)->names([
+        'index' => 'admin.tld-pricings.index',
+        'create' => 'admin.tld-pricings.create',
+        'store' => 'admin.tld-pricings.store',
+        'show' => 'admin.tld-pricings.show',
+        'edit' => 'admin.tld-pricings.edit',
+        'update' => 'admin.tld-pricings.update',
+        'destroy' => 'admin.tld-pricings.destroy'
+    ]);
     
     // Subscription Plan Management Routes
     Route::resource('subscription-plans', \App\Http\Controllers\Admin\SubscriptionPlanController::class)->names([
